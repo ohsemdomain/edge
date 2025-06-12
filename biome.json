@@ -7,10 +7,7 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": [
-			"node_modules",
-			"dist"
-		]
+		"ignore": ["node_modules", "dist"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -18,7 +15,7 @@
 		"indentStyle": "tab",
 		"indentWidth": 2,
 		"lineEnding": "lf",
-		"lineWidth": 100,
+		"lineWidth": 150,
 		"attributePosition": "auto"
 	},
 	"organizeImports": {
@@ -40,10 +37,10 @@
 	},
 	"javascript": {
 		"formatter": {
-			"jsxQuoteStyle": "double",
+			"jsxQuoteStyle": "single",
 			"quoteProperties": "asNeeded",
-			"trailingCommas": "all",
-			"semicolons": "always",
+			"trailingCommas": "none",
+			"semicolons": "asNeeded",
 			"arrowParentheses": "always",
 			"bracketSpacing": true,
 			"bracketSameLine": false,
