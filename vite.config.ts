@@ -14,9 +14,9 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
-			'@shared': path.resolve(__dirname, '-shared'),
-			'@app': path.resolve(__dirname, '-app'),
-			'@worker': path.resolve(__dirname, '-worker')
+			'@shared': path.resolve(__dirname, '_shared'),
+			'@app': path.resolve(__dirname, '_app'),
+			'@worker': path.resolve(__dirname, '_worker')
 		}
 	}
 })
