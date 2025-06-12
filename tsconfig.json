@@ -23,11 +23,11 @@
 		"forceConsistentCasingInFileNames": true,
 		"baseUrl": ".",
 		"paths": {
-			"@shared/*": ["-shared/*"],
-			"@app/*": ["-app/*"],
-			"@worker/*": ["-worker/*"]
+			"@shared/*": ["_shared/*"],
+			"@app/*": ["_app/*"],
+			"@worker/*": ["_worker/*"]
 		}
 	},
-	"include": ["-app", "-worker", "-shared", "vite.config.ts"],
+	"include": ["_app", "_worker", "_shared", "vite.config.ts"],
 	"exclude": ["node_modules", "dist"]
 }

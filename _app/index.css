@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Roboto+Flex:opsz,wdth,wght@8..144,75,100..1000&display=swap');
+@import "tailwindcss";
+
+@layer utilities {
+	.font-roboto {
+		font-family: 'Roboto Flex', Arial, Helvetica, sans-serif;
+	}
+
+	.font-geist {
+		font-family: 'Geist', Arial, Helvetica, sans-serif;
+	}
+}
