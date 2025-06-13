@@ -10,3 +10,46 @@
 		font-family: 'Geist', Arial, Helvetica, sans-serif;
 	}
 }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	@apply font-semibold;
+}
+
+h1 {
+	font-size: 2rem;
+}
+
+h2 {
+	font-size: 1.45rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+}
+
+h4,
+h5,
+h6 {
+	font-size: 1rem;
+}
+
+.mantine-NavLink-root {
+	background-color: transparent !important;
+	color: white;
+	@apply mb-1;
+}
+
+.mantine-NavLink-root:hover {
+	background-color: rgba(255, 255, 255, 0.1) !important;
+	border-radius: 5px;
+}
+
+.mantine-NavLink-root[data-active="true"] {
+	background-color: var(--color-blue-700) !important;
+	border-radius: 5px;
+}

@@ -2,13 +2,16 @@ import { AppShell, Burger, Group, NavLink, ScrollArea, Text } from '@mantine/cor
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { Archive, Package, Users, Waves } from 'lucide-react'
+import { Archive, LayoutDashboard, ScanBarcode, Contact, Waves } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
+
 import { ItemsPage } from './pages/ItemsPage'
+import { ArchivePage } from './pages/archive/ArchivePage'
 import { ContactFormPage } from './pages/contacts/ContactFormPage'
 import { ContactsPage } from './pages/contacts/ContactsPage'
-import { ArchivePage } from './pages/archive/ArchivePage'
+import { DashboardPage } from './pages/dashboard/DashboardPage'
+
 import { trpc } from './utils/trpc'
 
 const queryClient = new QueryClient()
@@ -25,8 +28,9 @@ function App() {
 	const location = useLocation()
 
 	const navigation = [
-		{ label: 'Items', icon: Package, href: '/' },
-		{ label: 'Contacts', icon: Users, href: '/contacts' },
+		{ label: 'Dashboard', icon: LayoutDashboard, href: '/' },
+		{ label: 'Items', icon: ScanBarcode, href: '/items' },
+		{ label: 'Contacts', icon: Contact, href: '/contacts' },
 		{ label: 'Archive', icon: Archive, href: '/archive' }
 	]
 
@@ -45,7 +49,7 @@ function App() {
 							<Burger opened={opened} onClick={toggle} size='sm' />
 						</Group>
 					</AppShell.Header>
-					<AppShell.Navbar bg='dark.9'>
+					<AppShell.Navbar bg='dark.9' style={{withBorder:'false'}}>
 						<AppShell.Section>
 							<div className='flex items-center space-x-3 p-4'>
 								<Waves color='white' className='h-7 w-7' />
@@ -63,20 +67,14 @@ function App() {
 									label={item.label}
 									leftSection={<item.icon size={20} />}
 									active={location.pathname === item.href}
-									color='white'
-									variant='subtle'
-									className='mb-1'
-									styles={{
-										root: { borderRadius: '8px' },
-										label: { color: 'white' }
-									}}
 								/>
 							))}
 						</AppShell.Section>
 					</AppShell.Navbar>
-					<AppShell.Main>
+					<AppShell.Main className='font-roboto'>
 						<Routes>
-							<Route path='/' element={<ItemsPage />} />
+							<Route path='/' element={<DashboardPage />} />
+							<Route path='/items' element={<ItemsPage />} />
 							<Route path='/contacts' element={<ContactsPage />} />
 							<Route path='/contacts/new' element={<ContactFormPage mode='create' />} />
 							<Route path='/contacts/edit/:id' element={<ContactFormPage mode='edit' />} />
