@@ -1,17 +1,17 @@
-import { ActionIcon, AppShell, Group, NavLink, ScrollArea, Text, Title } from '@mantine/core'
+import { ActionIcon, AppShell, Group, NavLink, ScrollArea, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { Archive, Contact, LayoutDashboard, ScanBarcode, SquareChevronRight, Waves } from 'lucide-react'
+import { Archive, Contact, LayoutDashboard, ScanBarcode, SquareChevronRight } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 
-import { ItemsPage } from './features/items/ItemsPage'
-import { ItemFormPage } from './features/items/ItemFormPage'
 import { ArchivePage } from './features/archive/ArchivePage'
 import { ContactFormPage } from './features/contacts/ContactFormPage'
 import { ContactsPage } from './features/contacts/ContactsPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
+import { ItemFormPage } from './features/items/ItemFormPage'
+import { ItemsPage } from './features/items/ItemsPage'
 
 import { trpc } from './utils/trpc'
 
@@ -43,12 +43,7 @@ function App() {
 	return (
 		<trpc.Provider client={trpcClient} queryClient={queryClient}>
 			<QueryClientProvider client={queryClient}>
-				<AppShell
-					layout='alt'
-					header={{ height: 60 }}
-					navbar={{ width: 260, breakpoint: 'lg', collapsed: { mobile: !opened } }}
-					padding='md'
-				>
+				<AppShell layout='alt' header={{ height: 60 }} navbar={{ width: 260, breakpoint: 'lg', collapsed: { mobile: !opened } }} padding='md'>
 					<AppShell.Header>
 						<Group h='100%' px='md' justify='space-between'>
 							<Group>
