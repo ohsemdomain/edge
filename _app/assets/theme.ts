@@ -17,18 +17,6 @@ export const theme = createTheme({
 		xl: rem(16)
 	},
 
-	/*   fontFamily:
-    'InterVar, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif',
-  fontFamilyMonospace:
-    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace',
-  fontSizes: {
-    xs: rem(12),
-    sm: rem(14),
-    md: rem(16),
-    lg: rem(18),
-    xl: rem(20),
-  }, */
-
 	components: {
 		Button: {
 			defaultProps: {
