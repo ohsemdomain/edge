@@ -9,24 +9,24 @@ export function ItemsArchive() {
 	const search = searchParams.get('search') || ''
 	const page = Number(searchParams.get('page')) || 1
 
-	const { data, refetch } = trpc.contacts.list.useQuery({
+	const { data, refetch } = trpc.items.list.useQuery({
 		search,
 		page,
 		limit: 10,
 		status: 'inactive'
 	})
 
-	const updateStatusMutation = trpc.contacts.updateStatus.useMutation({
+	const updateStatusMutation = trpc.items.updateStatus.useMutation({
 		onSuccess: () => {
 			refetch()
-			toast.success('Contact activated')
+			toast.success('Item activated')
 		}
 	})
 
-	const deleteMutation = trpc.contacts.delete.useMutation({
+	const deleteMutation = trpc.items.delete.useMutation({
 		onSuccess: () => {
 			refetch()
-			toast.success('Contact deleted')
+			toast.success('Item deleted')
 		}
 	})
 
@@ -52,7 +52,7 @@ export function ItemsArchive() {
 	}
 
 	const handleDelete = (id: string) => {
-		if (window.confirm('Permanently delete this contact?')) {
+		if (window.confirm('Permanently delete this item?')) {
 			deleteMutation.mutate(id)
 		}
 	}
@@ -60,27 +60,27 @@ export function ItemsArchive() {
 	return (
 		<Stack>
 			<TextInput
-				placeholder='Search archived contacts...'
+				placeholder='Search archived items...'
 				leftSection={<Search size={16} />}
 				value={search}
 				onChange={(e) => handleSearch(e.target.value)}
 			/>
 
 			<Stack gap='xs'>
-				{data?.contacts.map((contact) => (
-					<Card key={contact.id} padding='sm' withBorder>
+				{data?.items.map((item) => (
+					<Card key={item.id} padding='sm' withBorder>
 						<Group justify='space-between'>
 							<div>
-								<Text fw={500}>{contact.name}</Text>
-								<Text size='sm' c='dimmed'>
-									{contact.phone}
+								<Text fw={500}>{item.name}</Text>
+								<Text size='sm' c='dimmed' className='geist'>
+									ID: {item.id.slice(0, 8)}...
 								</Text>
 							</div>
 							<Group>
 								<Button
 									size='xs'
 									leftSection={<CheckCircle size={14} />}
-									onClick={() => handleActivate(contact.id)}
+									onClick={() => handleActivate(item.id)}
 									loading={updateStatusMutation.isPending}
 								>
 									Mark as Active
@@ -89,7 +89,7 @@ export function ItemsArchive() {
 									size='xs'
 									color='red'
 									leftSection={<Trash size={14} />}
-									onClick={() => handleDelete(contact.id)}
+									onClick={() => handleDelete(item.id)}
 									loading={deleteMutation.isPending}
 								>
 									Delete
@@ -102,7 +102,7 @@ export function ItemsArchive() {
 
 			{data?.totalItems === 0 && (
 				<Text c='dimmed' ta='center'>
-					No archived contacts
+					No archived items
 				</Text>
 			)}
 
