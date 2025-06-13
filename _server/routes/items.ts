@@ -1,8 +1,13 @@
 import { z } from 'zod'
 import { publicProcedure, router } from '../trpc'
 
-// In-memory store for demo (replace with D1/KV in production)
-const items: Array<{ id: string; name: string; createdAt: Date }> = []
+// Updated item type with status
+const items: Array<{
+	id: string
+	name: string
+	status: 'active' | 'inactive'
+	createdAt: Date
+}> = []
 
 export const itemsRouter = router({
 	list: publicProcedure
@@ -10,23 +15,27 @@ export const itemsRouter = router({
 			z.object({
 				search: z.string().optional(),
 				page: z.number().default(1),
-				limit: z.number().default(10)
+				limit: z.number().default(10),
+				status: z.enum(['active', 'inactive']).default('active')
 			})
 		)
 		.query(({ input }) => {
-			let filtered = items
+			let filtered = items.filter((i) => i.status === input.status)
 
 			if (input.search) {
-				filtered = items.filter((item) => item.name.toLowerCase().includes(input.search!.toLowerCase()))
+				filtered = filtered.filter((item) => item.name.toLowerCase().includes(input.search!.toLowerCase()))
 			}
 
+			// Always sort newest first
+			const sorted = [...filtered].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+
 			const start = (input.page - 1) * input.limit
-			const paginatedItems = filtered.slice(start, start + input.limit)
+			const paginatedItems = sorted.slice(start, start + input.limit)
 
 			return {
 				items: paginatedItems,
-				totalPages: Math.ceil(filtered.length / input.limit),
-				totalItems: filtered.length
+				totalPages: Math.ceil(sorted.length / input.limit),
+				totalItems: sorted.length
 			}
 		}),
 
@@ -34,6 +43,7 @@ export const itemsRouter = router({
 		const newItem = {
 			id: crypto.randomUUID(),
 			name: input.name,
+			status: 'active' as const,
 			createdAt: new Date()
 		}
 		items.push(newItem)
@@ -52,6 +62,21 @@ export const itemsRouter = router({
 			if (index === -1) throw new Error('Item not found')
 
 			items[index] = { ...items[index], name: input.name }
+			return items[index]
+		}),
+
+	updateStatus: publicProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				status: z.enum(['active', 'inactive'])
+			})
+		)
+		.mutation(({ input }) => {
+			const index = items.findIndex((i) => i.id === input.id)
+			if (index === -1) throw new Error('Item not found')
+
+			items[index] = { ...items[index], status: input.status }
 			return items[index]
 		}),
 

@@ -2,7 +2,7 @@ import { Button, Card, Group, Pagination, Stack, Text, TextInput } from '@mantin
 import { CheckCircle, Search, Trash } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSearchParams } from 'react-router-dom'
-import { trpc } from '../../utils/trpc'
+import { trpc } from '~c/utils/trpc'
 
 export function ContactsArchive() {
 	const [searchParams, setSearchParams] = useSearchParams()

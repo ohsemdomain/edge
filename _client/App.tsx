@@ -6,11 +6,12 @@ import { Archive, Contact, LayoutDashboard, ScanBarcode, SquareChevronRight, Wav
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 
-import { ItemsPage } from './pages/ItemsPage'
-import { ArchivePage } from './pages/archive/ArchivePage'
-import { ContactFormPage } from './pages/contacts/ContactFormPage'
-import { ContactsPage } from './pages/contacts/ContactsPage'
-import { DashboardPage } from './pages/dashboard/DashboardPage'
+import { ItemsPage } from './features/items/ItemsPage'
+import { ItemFormPage } from './features/items/ItemFormPage'
+import { ArchivePage } from './features/archive/ArchivePage'
+import { ContactFormPage } from './features/contacts/ContactFormPage'
+import { ContactsPage } from './features/contacts/ContactsPage'
+import { DashboardPage } from './features/dashboard/DashboardPage'
 
 import { trpc } from './utils/trpc'
 
@@ -54,7 +55,7 @@ function App() {
 								<ActionIcon className='mantine-hidden-from-lg' onClick={toggle} variant='transparent' size='lg'>
 									<SquareChevronRight size='xl' />
 								</ActionIcon>
-								<Title order={2} size='xl' fw={600}>
+								<Title order={3} fw={600}>
 									{currentPage.label}
 								</Title>
 							</Group>
@@ -79,6 +80,8 @@ function App() {
 						<Routes>
 							<Route path='/' element={<DashboardPage />} />
 							<Route path='/items' element={<ItemsPage />} />
+							<Route path='/items/new' element={<ItemFormPage mode='create' />} />
+							<Route path='/items/edit/:id' element={<ItemFormPage mode='edit' />} />
 							<Route path='/contacts' element={<ContactsPage />} />
 							<Route path='/contacts/new' element={<ContactFormPage mode='create' />} />
 							<Route path='/contacts/edit/:id' element={<ContactFormPage mode='edit' />} />
@@ -86,7 +89,7 @@ function App() {
 						</Routes>
 					</AppShell.Main>
 				</AppShell>
-				<Toaster position='top-right' />
+				<Toaster position='top-center' />
 			</QueryClientProvider>
 		</trpc.Provider>
 	)
