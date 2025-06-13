@@ -1,6 +1,6 @@
-import { AppShell, Burger, Group, ScrollArea, Skeleton } from '@mantine/core'
+import { AppShell, Burger, Group, ScrollArea, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { Target } from 'lucide-react'
+import { Waves } from 'lucide-react'
 
 function App() {
 	const [opened, { toggle }] = useDisclosure()
@@ -8,39 +8,27 @@ function App() {
 		<AppShell
 			layout='alt'
 			header={{ height: 60 }}
-			navbar={{ width: 300, breakpoint: 'lg', collapsed: { mobile: !opened } }}
+			navbar={{ width: 260, breakpoint: 'lg', collapsed: { mobile: !opened } }}
 			padding='md'
 			className='font-roboto'
 		>
 			<AppShell.Header>
 				<Group className='mantine-hidden-from-lg' h='100%' px='md'>
 					<Burger opened={opened} onClick={toggle} size='sm' />
-					<div className='flex items-center space-x-2'>
-						<Target color='blue' className='h-5 w-5' />
-						<span color='blue' className='font-bold'>
-							EDGE
-						</span>
-					</div>
 				</Group>
 			</AppShell.Header>
-			<AppShell.Navbar p='md'>
+			<AppShell.Navbar bg='dark.9'>
 				<AppShell.Section>
-					<div className='flex items-center space-x-2'>
-						<Target color='blue' className='h-5 w-5' />
-						<span color='blue' className='font-bold'>
-							EDGE
-						</span>
+					<div className='flex items-center space-x-3 p-4'>
+						<Waves color='white' className='h-7 w-7' />
+						<Text fz={20} fw={600} c='white'>
+							Edge
+						</Text>
 					</div>
 				</AppShell.Section>
-				<AppShell.Section grow my='md' component={ScrollArea}>
-					60 links in a scrollable section
-					{Array(60)
-						.fill(0)
-						.map((_, index) => (
-							<Skeleton key={index} h={28} mt='sm' animate={false} />
-						))}
+				<AppShell.Section grow p='md' component={ScrollArea}>
+					Navigation Here
 				</AppShell.Section>
-				<AppShell.Section>Navbar footer – always at the bottom</AppShell.Section>
 			</AppShell.Navbar>
 			<AppShell.Main>Main</AppShell.Main>
 		</AppShell>
