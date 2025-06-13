@@ -2,12 +2,13 @@ import { AppShell, Burger, Group, NavLink, ScrollArea, Text } from '@mantine/cor
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { Package, Users, Waves } from 'lucide-react'
+import { Archive, Package, Users, Waves } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import { ItemsPage } from './pages/ItemsPage'
 import { ContactFormPage } from './pages/contacts/ContactFormPage'
 import { ContactsPage } from './pages/contacts/ContactsPage'
+import { ArchivePage } from './pages/archive/ArchivePage'
 import { trpc } from './utils/trpc'
 
 const queryClient = new QueryClient()
@@ -25,7 +26,8 @@ function App() {
 
 	const navigation = [
 		{ label: 'Items', icon: Package, href: '/' },
-		{ label: 'Contacts', icon: Users, href: '/contacts' }
+		{ label: 'Contacts', icon: Users, href: '/contacts' },
+		{ label: 'Archive', icon: Archive, href: '/archive' }
 	]
 
 	return (
@@ -78,6 +80,7 @@ function App() {
 							<Route path='/contacts' element={<ContactsPage />} />
 							<Route path='/contacts/new' element={<ContactFormPage mode='create' />} />
 							<Route path='/contacts/edit/:id' element={<ContactFormPage mode='edit' />} />
+							<Route path='/archive' element={<ArchivePage />} />
 						</Routes>
 					</AppShell.Main>
 				</AppShell>

@@ -1,8 +1,14 @@
 import { z } from 'zod'
 import { publicProcedure, router } from '../trpc'
 
-// In-memory store for demo (replace with D1/KV in production)
-const contacts: Array<{ id: string; name: string; phone: string; createdAt: Date }> = []
+// Updated contact type with status
+const contacts: Array<{
+	id: string
+	name: string
+	phone: string
+	status: 'active' | 'inactive'
+	createdAt: Date
+}> = []
 
 export const contactsRouter = router({
 	list: publicProcedure
@@ -10,14 +16,15 @@ export const contactsRouter = router({
 			z.object({
 				search: z.string().optional(),
 				page: z.number().default(1),
-				limit: z.number().default(10)
+				limit: z.number().default(10),
+				status: z.enum(['active', 'inactive']).default('active')
 			})
 		)
 		.query(({ input }) => {
-			let filtered = contacts
+			let filtered = contacts.filter((c) => c.status === input.status)
 
 			if (input.search) {
-				filtered = contacts.filter(
+				filtered = filtered.filter(
 					(contact) => contact.name.toLowerCase().includes(input.search!.toLowerCase()) || contact.phone.includes(input.search!)
 				)
 			}
@@ -47,6 +54,7 @@ export const contactsRouter = router({
 				id: crypto.randomUUID(),
 				name: input.name,
 				phone: input.phone,
+				status: 'active' as const,
 				createdAt: new Date()
 			}
 			contacts.push(newContact)
@@ -66,6 +74,21 @@ export const contactsRouter = router({
 			if (index === -1) throw new Error('Contact not found')
 
 			contacts[index] = { ...contacts[index], name: input.name, phone: input.phone }
+			return contacts[index]
+		}),
+
+	updateStatus: publicProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				status: z.enum(['active', 'inactive'])
+			})
+		)
+		.mutation(({ input }) => {
+			const index = contacts.findIndex((c) => c.id === input.id)
+			if (index === -1) throw new Error('Contact not found')
+
+			contacts[index] = { ...contacts[index], status: input.status }
 			return contacts[index]
 		}),
 

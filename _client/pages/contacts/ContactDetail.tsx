@@ -1,5 +1,5 @@
 import { Button, Card, Group, Stack, Text, Title } from '@mantine/core'
-import { Edit, Trash } from 'lucide-react'
+import { Archive, Edit } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { trpc } from '../../utils/trpc'
@@ -15,13 +15,14 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 	const { data: contactsData } = trpc.contacts.list.useQuery({
 		search: '',
 		page: 1,
-		limit: 100
+		limit: 100,
+		status: 'active'
 	})
 
-	const deleteMutation = trpc.contacts.delete.useMutation({
+	const updateStatusMutation = trpc.contacts.updateStatus.useMutation({
 		onSuccess: () => {
 			utils.contacts.list.invalidate()
-			toast.success('Contact deleted')
+			toast.success('Contact archived')
 			navigate('/contacts')
 		}
 	})
@@ -30,9 +31,9 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
 	if (!contact) return <Text>Contact not found</Text>
 
-	const handleDelete = () => {
-		if (window.confirm('Are you sure you want to delete this contact?')) {
-			deleteMutation.mutate(contact.id)
+	const handleArchive = () => {
+		if (window.confirm('Archive this contact?')) {
+			updateStatusMutation.mutate({ id: contact.id, status: 'inactive' })
 		}
 	}
 
@@ -50,8 +51,8 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 						<Button leftSection={<Edit size={16} />} onClick={() => navigate(`/contacts/edit/${contact.id}`)}>
 							Edit
 						</Button>
-						<Button color='red' leftSection={<Trash size={16} />} onClick={handleDelete} loading={deleteMutation.isPending}>
-							Delete
+						<Button variant='subtle' leftSection={<Archive size={16} />} onClick={handleArchive} loading={updateStatusMutation.isPending}>
+							Mark as Inactive
 						</Button>
 					</Group>
 				</Group>
