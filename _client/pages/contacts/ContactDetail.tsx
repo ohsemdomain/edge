@@ -2,7 +2,8 @@ import { Button, Card, Group, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import { trpc } from '../../utils/trpc'
+import { formatDate } from '~c/utils/formatter'
+import { trpc } from '~c/utils/trpc'
 
 interface ContactDetailProps {
 	contactId: string
@@ -29,7 +30,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
 	const contact = contactsData?.contacts.find((c) => c.id === contactId)
 
-	if (!contact) return <Text>Contact not found</Text>
+	if (!contact) return null
 
 	const handleArchive = () => {
 		if (window.confirm('Archive this contact?')) {
@@ -69,14 +70,16 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 						<Text size='sm' c='dimmed'>
 							Phone
 						</Text>
-						<Text size='lg'>{contact.phone}</Text>
+						<Text size='lg' className='geist'>
+							{contact.phone}
+						</Text>
 					</div>
 
 					<div>
 						<Text size='sm' c='dimmed'>
 							Created
 						</Text>
-						<Text>{new Date(contact.createdAt).toLocaleDateString()}</Text>
+						<Text className='geist'>{formatDate(Math.floor(new Date(contact.createdAt).getTime() / 1000))}</Text>
 					</div>
 				</Stack>
 			</Stack>

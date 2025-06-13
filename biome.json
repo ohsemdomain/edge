@@ -27,7 +27,7 @@
 			"recommended": true,
 			"correctness": {
 				"noUnusedVariables": "error",
-				"useExhaustiveDependencies": "warn"
+				"useExhaustiveDependencies": "off"
 			},
 			"style": {
 				"noNonNullAssertion": "off",

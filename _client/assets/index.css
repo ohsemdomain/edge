@@ -1,41 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Roboto+Flex:opsz,wdth,wght@8..144,75,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Inter+Tight:ital,wght@0,400..700;1,400..700&display=swap');
 @import "tailwindcss";
 
 @layer utilities {
-	.font-roboto {
-		font-family: 'Roboto Flex', Arial, Helvetica, sans-serif;
+	.inter {
+		font-family: 'Inter Tight', Arial, Helvetica, sans-serif;
 	}
 
-	.font-geist {
+	.geist {
 		font-family: 'Geist', Arial, Helvetica, sans-serif;
 	}
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-	@apply font-semibold;
-}
-
-h1 {
-	font-size: 2rem;
-}
-
-h2 {
-	font-size: 1.45rem;
-}
-
-h3 {
-	font-size: 1.25rem;
-}
-
-h4,
-h5,
-h6 {
-	font-size: 1rem;
 }
 
 .mantine-NavLink-root {

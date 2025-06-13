@@ -1,7 +1,7 @@
 import { Button, Card, Pagination, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
 import { Plus, Search } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { trpc } from '../../utils/trpc'
+import { trpc } from '~c/utils/trpc'
 
 interface ContactsListProps {
 	selectedId: string
@@ -57,7 +57,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 							}}
 						>
 							<Text fw={500}>{contact.name}</Text>
-							<Text size='sm' c='dimmed'>
+							<Text className='geist' size='sm' c='dimmed'>
 								{contact.phone}
 							</Text>
 						</Card>

@@ -1,8 +1,8 @@
-import { AppShell, Burger, Group, NavLink, ScrollArea, Text } from '@mantine/core'
+import { ActionIcon, AppShell, Group, NavLink, ScrollArea, Text, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { Archive, LayoutDashboard, ScanBarcode, Contact, Waves } from 'lucide-react'
+import { Archive, Contact, LayoutDashboard, ScanBarcode, SquareChevronRight, Waves } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 
@@ -34,6 +34,11 @@ function App() {
 		{ label: 'Archive', icon: Archive, href: '/archive' }
 	]
 
+	// Get current page title
+	const currentPage =
+		navigation.find((item) => item.href === location.pathname) ||
+		(location.pathname.startsWith('/contacts/') ? { label: 'Contacts' } : { label: 'Dashboard' })
+
 	return (
 		<trpc.Provider client={trpcClient} queryClient={queryClient}>
 			<QueryClientProvider client={queryClient}>
@@ -42,22 +47,20 @@ function App() {
 					header={{ height: 60 }}
 					navbar={{ width: 260, breakpoint: 'lg', collapsed: { mobile: !opened } }}
 					padding='md'
-					className='font-roboto'
 				>
 					<AppShell.Header>
-						<Group className='mantine-hidden-from-lg' h='100%' px='md'>
-							<Burger opened={opened} onClick={toggle} size='sm' />
+						<Group h='100%' px='md' justify='space-between'>
+							<Group>
+								<ActionIcon className='mantine-hidden-from-lg' onClick={toggle} variant='transparent' size='lg'>
+									<SquareChevronRight size='xl' />
+								</ActionIcon>
+								<Title order={2} size='xl' fw={600}>
+									{currentPage.label}
+								</Title>
+							</Group>
 						</Group>
 					</AppShell.Header>
-					<AppShell.Navbar bg='dark.9' style={{withBorder:'false'}}>
-						<AppShell.Section>
-							<div className='flex items-center space-x-3 p-4'>
-								<Waves color='white' className='h-7 w-7' />
-								<Text fz={20} fw={600} c='white'>
-									Edge
-								</Text>
-							</div>
-						</AppShell.Section>
+					<AppShell.Navbar bg='dark.9' style={{ withBorder: 'false' }}>
 						<AppShell.Section grow p='md' component={ScrollArea}>
 							{navigation.map((item) => (
 								<NavLink
@@ -67,11 +70,12 @@ function App() {
 									label={item.label}
 									leftSection={<item.icon size={20} />}
 									active={location.pathname === item.href}
+									onClick={toggle}
 								/>
 							))}
 						</AppShell.Section>
 					</AppShell.Navbar>
-					<AppShell.Main className='font-roboto'>
+					<AppShell.Main>
 						<Routes>
 							<Route path='/' element={<DashboardPage />} />
 							<Route path='/items' element={<ItemsPage />} />

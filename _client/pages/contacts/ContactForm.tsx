@@ -1,7 +1,7 @@
 import { Button, Card, Group, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { trpc } from '../../utils/trpc'
+import { trpc } from '~c/utils/trpc'
 
 interface ContactFormProps {
 	mode: 'create' | 'edit'

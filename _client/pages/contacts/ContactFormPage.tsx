@@ -2,7 +2,7 @@ import { Button, Card, Container, Group, Stack, Text, TextInput, Title } from '@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
-import { trpc } from '../../utils/trpc'
+import { trpc } from '~c/utils/trpc'
 
 interface ContactFormPageProps {
 	mode: 'create' | 'edit'
