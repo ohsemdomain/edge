@@ -39,7 +39,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 	}
 
 	return (
-		<Card h='100%' padding='lg'>
+		<Card padding='lg'>
 			<Stack>
 				<Group justify='space-between' align='start'>
 					<div>
