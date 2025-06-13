@@ -1,4 +1,4 @@
-import { Button, Card, Group, Stack, Text, Title } from '@mantine/core'
+import { Button, Card, Group, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -39,7 +39,7 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 	}
 
 	return (
-		<Card padding='lg'>
+		<Card h='100%' padding='lg'>
 			<Stack>
 				<Group justify='space-between' align='start'>
 					<div>
@@ -58,30 +58,32 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 					</Group>
 				</Group>
 
-				<Stack gap='md' mt='xl'>
-					<div>
-						<Text size='sm' c='dimmed'>
-							Name
-						</Text>
-						<Text size='lg'>{item.name}</Text>
-					</div>
+				<ScrollArea flex={1}>
+					<Stack gap='md' mt='xl'>
+						<div>
+							<Text size='sm' c='dimmed'>
+								Name
+							</Text>
+							<Text size='lg'>{item.name}</Text>
+						</div>
 
-					<div>
-						<Text size='sm' c='dimmed'>
-							ID
-						</Text>
-						<Text size='lg' className='geist'>
-							{item.id}
-						</Text>
-					</div>
+						<div>
+							<Text size='sm' c='dimmed'>
+								ID
+							</Text>
+							<Text size='lg' className='geist'>
+								{item.id}
+							</Text>
+						</div>
 
-					<div>
-						<Text size='sm' c='dimmed'>
-							Created
-						</Text>
-						<Text className='geist'>{formatDate(Math.floor(new Date(item.createdAt).getTime() / 1000))}</Text>
-					</div>
-				</Stack>
+						<div>
+							<Text size='sm' c='dimmed'>
+								Created
+							</Text>
+							<Text className='geist'>{formatDate(Math.floor(new Date(item.createdAt).getTime() / 1000))}</Text>
+						</div>
+					</Stack>
+				</ScrollArea>
 			</Stack>
 		</Card>
 	)
