@@ -1,13 +1,14 @@
+// _server/routes/items.ts
 import { z } from 'zod'
 import { publicProcedure, router } from '../trpc'
 
-// Updated item type with status
-const items: Array<{
+// Define the database row type
+interface ItemRow {
 	id: string
 	name: string
-	status: 'active' | 'inactive'
-	createdAt: Date
-}> = []
+	status: string
+	created_at: number
+}
 
 export const itemsRouter = router({
 	list: publicProcedure
@@ -19,36 +20,64 @@ export const itemsRouter = router({
 				status: z.enum(['active', 'inactive']).default('active')
 			})
 		)
-		.query(({ input }) => {
-			let filtered = items.filter((i) => i.status === input.status)
+		.query(async ({ input, ctx }) => {
+			const { DB } = ctx.env
+			const offset = (input.page - 1) * input.limit
+
+			// Build query with optional search
+			let query = 'SELECT * FROM items WHERE status = ?'
+			const params: (string | number)[] = [input.status]
 
 			if (input.search) {
-				filtered = filtered.filter((item) => item.name.toLowerCase().includes(input.search!.toLowerCase()))
+				query += ' AND name LIKE ?'
+				params.push(`%${input.search}%`)
 			}
 
-			// Always sort newest first
-			const sorted = [...filtered].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+			// Get total count for pagination
+			const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as count')
+			const countResult = await DB.prepare(countQuery)
+				.bind(...params)
+				.first<{ count: number }>()
+			const totalItems = countResult?.count || 0
 
-			const start = (input.page - 1) * input.limit
-			const paginatedItems = sorted.slice(start, start + input.limit)
+			// Get paginated results
+			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
+			params.push(input.limit, offset)
+
+			const { results } = await DB.prepare(query)
+				.bind(...params)
+				.all<ItemRow>()
 
 			return {
-				items: paginatedItems,
-				totalPages: Math.ceil(sorted.length / input.limit),
-				totalItems: sorted.length
+				items: results.map((item) => ({
+					id: item.id,
+					name: item.name,
+					status: item.status,
+					createdAt: new Date(item.created_at * 1000)
+				})),
+				totalPages: Math.ceil(totalItems / input.limit),
+				totalItems
 			}
 		}),
 
-	create: publicProcedure.input(z.object({ name: z.string().min(1) })).mutation(({ input }) => {
-		const newItem = {
-			id: crypto.randomUUID(),
-			name: input.name,
-			status: 'active' as const,
-			createdAt: new Date()
-		}
-		items.push(newItem)
-		return newItem
-	}),
+	create: publicProcedure
+		.input(z.object({ name: z.string().min(1) }))
+		.mutation(async ({ input, ctx }) => {
+			const { DB } = ctx.env
+			const id = crypto.randomUUID().slice(0, 8)
+			const createdAt = Math.floor(Date.now() / 1000) // Unix timestamp in seconds
+
+			await DB.prepare('INSERT INTO items (id, name, status, created_at) VALUES (?, ?, ?, ?)')
+				.bind(id, input.name, 'active', createdAt)
+				.run()
+
+			return {
+				id,
+				name: input.name,
+				status: 'active',
+				createdAt: new Date(createdAt * 1000)
+			}
+		}),
 
 	update: publicProcedure
 		.input(
@@ -57,12 +86,23 @@ export const itemsRouter = router({
 				name: z.string().min(1)
 			})
 		)
-		.mutation(({ input }) => {
-			const index = items.findIndex((item) => item.id === input.id)
-			if (index === -1) throw new Error('Item not found')
+		.mutation(async ({ input, ctx }) => {
+			const { DB } = ctx.env
 
-			items[index] = { ...items[index], name: input.name }
-			return items[index]
+			// Check if item exists
+			const existing = await DB.prepare('SELECT * FROM items WHERE id = ?')
+				.bind(input.id)
+				.first<ItemRow>()
+			if (!existing) throw new Error('Item not found')
+
+			await DB.prepare('UPDATE items SET name = ? WHERE id = ?').bind(input.name, input.id).run()
+
+			return {
+				id: input.id,
+				name: input.name,
+				status: existing.status,
+				createdAt: new Date(existing.created_at * 1000)
+			}
 		}),
 
 	updateStatus: publicProcedure
@@ -72,19 +112,36 @@ export const itemsRouter = router({
 				status: z.enum(['active', 'inactive'])
 			})
 		)
-		.mutation(({ input }) => {
-			const index = items.findIndex((i) => i.id === input.id)
-			if (index === -1) throw new Error('Item not found')
+		.mutation(async ({ input, ctx }) => {
+			const { DB } = ctx.env
 
-			items[index] = { ...items[index], status: input.status }
-			return items[index]
+			// Check if item exists
+			const existing = await DB.prepare('SELECT * FROM items WHERE id = ?')
+				.bind(input.id)
+				.first<ItemRow>()
+			if (!existing) throw new Error('Item not found')
+
+			await DB.prepare('UPDATE items SET status = ? WHERE id = ?')
+				.bind(input.status, input.id)
+				.run()
+
+			return {
+				id: input.id,
+				name: existing.name,
+				status: input.status,
+				createdAt: new Date(existing.created_at * 1000)
+			}
 		}),
 
-	delete: publicProcedure.input(z.string()).mutation(({ input: id }) => {
-		const index = items.findIndex((item) => item.id === id)
-		if (index === -1) throw new Error('Item not found')
+	delete: publicProcedure.input(z.string()).mutation(async ({ input: id, ctx }) => {
+		const { DB } = ctx.env
 
-		items.splice(index, 1)
+		// Check if item exists
+		const existing = await DB.prepare('SELECT * FROM items WHERE id = ?').bind(id).first<ItemRow>()
+		if (!existing) throw new Error('Item not found')
+
+		await DB.prepare('DELETE FROM items WHERE id = ?').bind(id).run()
+
 		return { success: true }
 	})
 })

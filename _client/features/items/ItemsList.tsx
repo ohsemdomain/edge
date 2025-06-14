@@ -65,7 +65,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 						>
 							<Text fw={500}>{item.name}</Text>
 							<Text className='geist' size='sm' c='dimmed'>
-								ID: {item.id.slice(0, 8)}...
+								ID: {item.id}
 							</Text>
 						</Card>
 					))}
