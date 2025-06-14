@@ -1,3 +1,4 @@
+//_client/features/items/ItemFormPage.tsx
 import { Box, Button, Group, Stack, TextInput, Title } from '@mantine/core'
 import { MoveLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -64,15 +65,13 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 					<div>
 						<Title order={2}>{mode === 'create' ? 'New Item' : 'Edit Item'}</Title>
 					</div>
-					<Group>
-						<Button
-							leftSection={<MoveLeft size={16} />}
-							onClick={() => navigate('/items')}
-							disabled={isLoading}
-						>
-							Back
-						</Button>
-					</Group>
+					<Button
+						leftSection={<MoveLeft size={16} />}
+						onClick={() => navigate('/items')}
+						disabled={isLoading}
+					>
+						Back
+					</Button>
 				</Group>
 				<Stack mt='xl'>
 					<Stack gap='md'>

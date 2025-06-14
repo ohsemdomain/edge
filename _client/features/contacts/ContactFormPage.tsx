@@ -1,4 +1,4 @@
-import { Box, Button, Group, Stack, TextInput, Title } from '@mantine/core'
+import { Box, Button, Group, Stack, TextInput, Text, Title } from '@mantine/core'
 import { MoveLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -60,19 +60,25 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 	return (
 		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
 			<Box maw={800} w='100%' p='md' style={{ overflow: 'hidden' }}>
+				<Group justify='space-between' align='center'>
+				  <Text>
+					Placholder
+				  </Text>
+				  <Text>
+					Placholder
+				  </Text>
+				</Group>
 				<Group bg='gray.0' justify='space-between' align='center'>
 					<div>
 						<Title order={2}>{mode === 'create' ? 'New Contact' : 'Edit Contact'}</Title>
 					</div>
-					<Group>
-						<Button
-							leftSection={<MoveLeft size={16} />}
-							onClick={() => navigate('/contacts')}
-							disabled={isLoading}
-						>
-							Back
-						</Button>
-					</Group>
+					<Button
+						leftSection={<MoveLeft size={16} />}
+						onClick={() => navigate('/contacts')}
+						disabled={isLoading}
+					>
+						Back
+					</Button>
 				</Group>
 				<Stack mt='xl'>
 					<Stack gap='md'>
