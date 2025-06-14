@@ -1,16 +1,17 @@
-import { ActionIcon, AppShell, Button, Group, NavLink, ScrollArea, Title } from '@mantine/core'
+import {
+	ActionIcon,
+	AppShell,
+	Button,
+	Group,
+	NavLink,
+	ScrollArea,
+	Text,
+	Title
+} from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import {
-	Archive,
-	ArrowLeft,
-	Contact,
-	LayoutDashboard,
-	MoveLeft,
-	ScanBarcode,
-	SquareChevronRight
-} from 'lucide-react'
+import { Archive, Contact, LayoutDashboard, Logs, MoveLeft, ScanBarcode } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
@@ -85,9 +86,9 @@ function App() {
 									className='mantine-hidden-from-lg'
 									onClick={toggle}
 									variant='transparent'
-									size='lg'
+									size='md'
 								>
-									<SquareChevronRight size='xl' />
+									<Logs size='xl' />
 								</ActionIcon>
 								{isFormPage && (
 									<Button
@@ -97,9 +98,17 @@ function App() {
 										Back
 									</Button>
 								)}
-								<Title order={2} fw={600}>
+								<Title order={3} fw={600}>
 									{currentPage.label}
 								</Title>
+							</Group>
+							<Group visibleFrom='lg'>
+								<Text size='sm' c='dimmed'>
+									User Name
+								</Text>
+								<Button bg='gray.4' c='gray.7'>
+									Logout
+								</Button>
 							</Group>
 						</Group>
 					</AppShell.Header>
@@ -134,7 +143,7 @@ function App() {
 						</Routes>
 					</AppShell.Main>
 				</AppShell>
-				<Toaster position='top-center' />
+				<Toaster position='bottom-right' />
 			</QueryClientProvider>
 		</trpc.Provider>
 	)

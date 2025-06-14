@@ -1,6 +1,5 @@
 //_client/features/items/ItemFormPage.tsx
-import { Box, Button, Group, Stack, TextInput, Title } from '@mantine/core'
-import { MoveLeft } from 'lucide-react'
+import { Box, Button, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -61,17 +60,9 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	return (
 		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
 			<Box maw={800} w='100%' p='md' style={{ overflow: 'hidden' }}>
-				<Group bg='gray.0' justify='space-between' align='center'>
-					<div>
-						<Title order={2}>{mode === 'create' ? 'New Item' : 'Edit Item'}</Title>
-					</div>
-					<Button
-						leftSection={<MoveLeft size={16} />}
-						onClick={() => navigate('/items')}
-						disabled={isLoading}
-					>
-						Back
-					</Button>
+				<Group justify='space-between' align='center'>
+					<Text>Placholder</Text>
+					<Text>Placholder</Text>
 				</Group>
 				<Stack mt='xl'>
 					<Stack gap='md'>

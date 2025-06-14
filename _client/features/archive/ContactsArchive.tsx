@@ -1,4 +1,4 @@
-import { Button, Card, Group, Pagination, Stack, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Card, Group, Pagination, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CheckCircle, Search, Trash } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSearchParams } from 'react-router-dom'
@@ -77,23 +77,30 @@ export function ContactsArchive() {
 								</Text>
 							</div>
 							<Group>
-								<Button
-									size='xs'
-									leftSection={<CheckCircle size={14} />}
-									onClick={() => handleActivate(contact.id)}
-									loading={updateStatusMutation.isPending}
-								>
-									Mark as Active
-								</Button>
-								<Button
-									size='xs'
-									color='red'
-									leftSection={<Trash size={14} />}
-									onClick={() => handleDelete(contact.id)}
-									loading={deleteMutation.isPending}
-								>
-									Delete
-								</Button>
+								<Tooltip label='Mark as Active' withArrow>
+									<ActionIcon
+										variant='light'
+										size='md'
+										onClick={() => handleActivate(contact.id)}
+										loading={updateStatusMutation.isPending}
+										aria-label='Mark as Active'
+									>
+										<CheckCircle size={14} />
+									</ActionIcon>
+								</Tooltip>
+
+								<Tooltip label='Delete' withArrow>
+									<ActionIcon
+										variant='light'
+										color='red'
+										size='md'
+										onClick={() => handleDelete(contact.id)}
+										loading={deleteMutation.isPending}
+										aria-label='Delete'
+									>
+										<Trash size={14} />
+									</ActionIcon>
+								</Tooltip>
 							</Group>
 						</Group>
 					</Card>
@@ -106,7 +113,9 @@ export function ContactsArchive() {
 				</Text>
 			)}
 
-			{data && data.totalPages > 1 && <Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />}
+			{data && data.totalPages > 1 && (
+				<Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />
+			)}
 		</Stack>
 	)
 }

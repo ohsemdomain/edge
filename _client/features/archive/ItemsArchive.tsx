@@ -1,4 +1,14 @@
-import { Button, Card, Group, Pagination, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
+import {
+	ActionIcon,
+	Card,
+	Group,
+	Pagination,
+	ScrollArea,
+	Stack,
+	Text,
+	TextInput,
+	Tooltip
+} from '@mantine/core'
 import { CheckCircle, Search, Trash } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSearchParams } from 'react-router-dom'
@@ -78,23 +88,30 @@ export function ItemsArchive() {
 									</Text>
 								</div>
 								<Group>
-									<Button
-										size='xs'
-										leftSection={<CheckCircle size={14} />}
-										onClick={() => handleActivate(item.id)}
-										loading={updateStatusMutation.isPending}
-									>
-										Mark as Active
-									</Button>
-									<Button
-										size='xs'
-										color='red'
-										leftSection={<Trash size={14} />}
-										onClick={() => handleDelete(item.id)}
-										loading={deleteMutation.isPending}
-									>
-										Delete
-									</Button>
+									<Tooltip label='Mark as Active' withArrow>
+										<ActionIcon
+											variant='light'
+											size='md'
+											onClick={() => handleActivate(item.id)}
+											loading={updateStatusMutation.isPending}
+											aria-label='Mark as Active'
+										>
+											<CheckCircle size={14} />
+										</ActionIcon>
+									</Tooltip>
+
+									<Tooltip label='Delete' withArrow>
+										<ActionIcon
+											variant='light'
+											color='red'
+											size='md'
+											onClick={() => handleDelete(item.id)}
+											loading={deleteMutation.isPending}
+											aria-label='Delete'
+										>
+											<Trash size={14} />
+										</ActionIcon>
+									</Tooltip>
 								</Group>
 							</Group>
 						</Card>
