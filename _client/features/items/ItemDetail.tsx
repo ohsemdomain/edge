@@ -13,10 +13,11 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 	const navigate = useNavigate()
 	const utils = trpc.useUtils()
 
+	// Use cached data from ItemsList query
 	const { data: itemsData } = trpc.items.list.useQuery({
 		search: '',
 		page: 1,
-		limit: 100,
+		limit: 1000,
 		status: 'active'
 	})
 

@@ -13,10 +13,11 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 	const navigate = useNavigate()
 	const utils = trpc.useUtils()
 
+	// Use cached data from ContactsList query
 	const { data: contactsData } = trpc.contacts.list.useQuery({
 		search: '',
 		page: 1,
-		limit: 100,
+		limit: 1000,
 		status: 'active'
 	})
 

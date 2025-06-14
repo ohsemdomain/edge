@@ -14,9 +14,9 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 	const [formData, setFormData] = useState({ name: '', phone: '' })
 	const utils = trpc.useUtils()
 
-	// Load contact data for edit mode
+	// Use cached data from ContactsList query for edit mode
 	const { data: contactsData } = trpc.contacts.list.useQuery(
-		{ search: '', page: 1, limit: 100 },
+		{ search: '', page: 1, limit: 1000, status: 'active' },
 		{ enabled: mode === 'edit' }
 	)
 
@@ -91,7 +91,7 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 						<Button onClick={handleSubmit} disabled={!canSubmit}>
 							{mode === 'create' ? 'Create' : 'Save'}
 						</Button>
-						<Button variant='subtle' onClick={() => navigate('/items')} disabled={isLoading}>
+						<Button variant='subtle' onClick={() => navigate('/contacts')} disabled={isLoading}>
 							Cancel
 						</Button>
 					</Group>

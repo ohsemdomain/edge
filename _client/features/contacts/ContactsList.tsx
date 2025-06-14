@@ -1,14 +1,15 @@
 import {
 	ActionIcon,
+	Badge,
 	Card,
 	Group,
-	Pagination,
 	ScrollArea,
 	Stack,
 	Text,
 	TextInput
 } from '@mantine/core'
 import { Plus, Search } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { trpc } from '~c/utils/trpc'
 
@@ -20,32 +21,37 @@ interface ContactsListProps {
 export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 	const [searchParams, setSearchParams] = useSearchParams()
 	const navigate = useNavigate()
-	const search = searchParams.get('search') || ''
-	const page = Number(searchParams.get('page')) || 1
+	const [search, setSearch] = useState('')
 
-	const { data } = trpc.contacts.list.useQuery({ search, page, limit: 10 })
+	// Load all contacts at once
+	const { data } = trpc.contacts.list.useQuery({
+		search: '', // Always empty for server
+		page: 1,
+		limit: 1000, // Get all contacts
+		status: 'active'
+	})
+
+	// Client-side filter
+	const filteredContacts = search
+		? data?.contacts?.filter((contact) =>
+				contact.name.toLowerCase().includes(search.toLowerCase()) ||
+				contact.phone.includes(search)
+		  ) || []
+		: data?.contacts || []
 
 	const handleSearch = (value: string) => {
-		const params = new URLSearchParams(searchParams)
+		setSearch(value)
+		// Still update URL for selected contact clearing
 		if (value) {
-			params.set('search', value)
-			params.set('page', '1')
+			const params = new URLSearchParams(searchParams)
 			params.delete('id')
-		} else {
-			params.delete('search')
+			setSearchParams(params)
 		}
-		setSearchParams(params)
-	}
-
-	const handlePageChange = (newPage: number) => {
-		const params = new URLSearchParams(searchParams)
-		params.set('page', newPage.toString())
-		setSearchParams(params)
 	}
 
 	return (
 		<Stack h='100%' gap='sm'>
-			<Group gap='sm' align='stretch'>
+			<Group gap='xs' align='stretch'>
 				<TextInput
 					placeholder='Search contacts...'
 					leftSection={<Search size={16} />}
@@ -53,6 +59,19 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 					onChange={(e) => handleSearch(e.target.value)}
 					style={{ flex: 1 }}
 				/>
+				<Badge
+					size='lg'
+					radius='sm'
+					bg='gray.2'
+					c='gray.5'
+					style={{
+						height: 'var(--input-height, 36px)',
+						paddingInline: 12,
+						minWidth: 50
+					}}
+				>
+					{data?.totalItems || 0}
+				</Badge>
 				<ActionIcon size='input-sm' variant='filled' onClick={() => navigate('/contacts/new')}>
 					<Plus size={18} />
 				</ActionIcon>
@@ -60,7 +79,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 
 			<ScrollArea flex={1} type='never'>
 				<Stack gap='xs'>
-					{data?.contacts.map((contact) => (
+					{filteredContacts.map((contact) => (
 						<Card
 							key={contact.id}
 							padding='sm'
@@ -81,10 +100,6 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 					))}
 				</Stack>
 			</ScrollArea>
-
-			{data && data.totalPages > 1 && (
-				<Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />
-			)}
 		</Stack>
 	)
 }

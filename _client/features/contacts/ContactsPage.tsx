@@ -11,19 +11,22 @@ export function ContactsPage() {
 	const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false)
 
 	const selectedId = searchParams.get('id') || ''
-	const search = searchParams.get('search') || ''
-	const page = Number(searchParams.get('page')) || 1
 
-	const { data } = trpc.contacts.list.useQuery({ search, page, limit: 10 })
+	const { data } = trpc.contacts.list.useQuery({
+		search: '',
+		page: 1,
+		limit: 1000,
+		status: 'active'
+	})
 
-	// Auto-select first contact if none selected on desktop	
+	// Auto-select first contact if none selected on desktop
 	useEffect(() => {
 		if (data?.contacts.length && !selectedId && window.innerWidth >= 1024) {
 			const params = new URLSearchParams(searchParams)
 			params.set('id', data.contacts[0].id)
 			setSearchParams(params)
 		}
-	}, [data?.contacts, selectedId])
+	}, [data?.contacts, selectedId, searchParams, setSearchParams])
 
 	const handleSelectContact = (id: string) => {
 		const params = new URLSearchParams(searchParams)

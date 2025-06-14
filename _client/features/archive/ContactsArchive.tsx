@@ -1,18 +1,16 @@
-import { ActionIcon, Card, Group, Pagination, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Card, Group, ScrollArea, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CheckCircle, Search, Trash } from 'lucide-react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { useSearchParams } from 'react-router-dom'
 import { trpc } from '~c/utils/trpc'
 
 export function ContactsArchive() {
-	const [searchParams, setSearchParams] = useSearchParams()
-	const search = searchParams.get('search') || ''
-	const page = Number(searchParams.get('page')) || 1
+	const [search, setSearch] = useState('')
 
 	const { data, refetch } = trpc.contacts.list.useQuery({
-		search,
-		page,
-		limit: 10,
+		search: '', // Always empty for server
+		page: 1,
+		limit: 1000, // Get all contacts
 		status: 'inactive'
 	})
 
@@ -28,22 +26,13 @@ export function ContactsArchive() {
 		}
 	})
 
-	const handleSearch = (value: string) => {
-		const params = new URLSearchParams(searchParams)
-		if (value) {
-			params.set('search', value)
-			params.set('page', '1')
-		} else {
-			params.delete('search')
-		}
-		setSearchParams(params)
-	}
-
-	const handlePageChange = (newPage: number) => {
-		const params = new URLSearchParams(searchParams)
-		params.set('page', newPage.toString())
-		setSearchParams(params)
-	}
+	// Client-side filter
+	const filteredContacts = search
+		? data?.contacts?.filter((contact) =>
+				contact.name.toLowerCase().includes(search.toLowerCase()) ||
+				contact.phone.includes(search)
+		  ) || []
+		: data?.contacts || []
 
 	const handleActivate = (id: string) => {
 		toast.promise(updateStatusMutation.mutateAsync({ id, status: 'active' }), {
@@ -69,11 +58,12 @@ export function ContactsArchive() {
 				placeholder='Search archived contacts...'
 				leftSection={<Search size={16} />}
 				value={search}
-				onChange={(e) => handleSearch(e.target.value)}
+				onChange={(e) => setSearch(e.target.value)}
 			/>
 
-			<Stack gap='xs'>
-				{data?.contacts.map((contact) => (
+			<ScrollArea style={{ flex: 1 }}>
+				<Stack gap='xs'>
+					{filteredContacts.map((contact) => (
 					<Card key={contact.id} padding='sm' withBorder>
 						<Group justify='space-between'>
 							<div>
@@ -110,18 +100,9 @@ export function ContactsArchive() {
 							</Group>
 						</Group>
 					</Card>
-				))}
-			</Stack>
-
-			{data?.totalItems === 0 && (
-				<Text c='dimmed' ta='center'>
-					No archived contacts
-				</Text>
-			)}
-
-			{data && data.totalPages > 1 && (
-				<Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />
-			)}
+					))}
+				</Stack>
+			</ScrollArea>
 		</Stack>
 	)
 }

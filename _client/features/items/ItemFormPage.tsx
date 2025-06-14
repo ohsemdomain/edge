@@ -15,9 +15,9 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	const [formData, setFormData] = useState({ name: '' })
 	const utils = trpc.useUtils()
 
-	// Load item data for edit mode
+	// Use cached data from ItemsList query for edit mode
 	const { data: itemsData } = trpc.items.list.useQuery(
-		{ search: '', page: 1, limit: 100 },
+		{ search: '', page: 1, limit: 1000, status: 'active' },
 		{ enabled: mode === 'edit' }
 	)
 

@@ -24,29 +24,26 @@ export const itemsRouter = router({
 			const { DB } = ctx.env
 			const offset = (input.page - 1) * input.limit
 
-			// Build query with optional search
-			let query = 'SELECT * FROM items WHERE status = ?'
+			// Build query
+			let query = 'SELECT * FROM items WHERE status = ? ORDER BY created_at DESC'
 			const params: (string | number)[] = [input.status]
 
+			// Add search filter if provided
 			if (input.search) {
-				query += ' AND name LIKE ?'
+				query = 'SELECT * FROM items WHERE status = ? AND name LIKE ? ORDER BY created_at DESC'
 				params.push(`%${input.search}%`)
 			}
 
-			// Get total count for pagination
-			const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as count')
-			const countResult = await DB.prepare(countQuery)
-				.bind(...params)
-				.first<{ count: number }>()
-			const totalItems = countResult?.count || 0
-
-			// Get paginated results
-			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
+			// Add pagination
+			query += ' LIMIT ? OFFSET ?'
 			params.push(input.limit, offset)
 
 			const { results } = await DB.prepare(query)
 				.bind(...params)
 				.all<ItemRow>()
+
+			// Get total count only if needed for pagination UI
+			const totalItems = results.length
 
 			return {
 				items: results.map((item) => ({
@@ -55,7 +52,7 @@ export const itemsRouter = router({
 					status: item.status,
 					createdAt: new Date(item.created_at * 1000)
 				})),
-				totalPages: Math.ceil(totalItems / input.limit),
+				totalPages: 1, // Simplified since clients use high limits
 				totalItems
 			}
 		}),

@@ -11,10 +11,13 @@ export function ItemsPage() {
 	const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false)
 
 	const selectedId = searchParams.get('id') || ''
-	const search = searchParams.get('search') || ''
-	const page = Number(searchParams.get('page')) || 1
 
-	const { data } = trpc.items.list.useQuery({ search, page, limit: 10 })
+	const { data } = trpc.items.list.useQuery({
+		search: '',
+		page: 1,
+		limit: 1000,
+		status: 'active'
+	})
 
 	// Auto-select first item if none selected on desktop
 	useEffect(() => {
@@ -23,7 +26,7 @@ export function ItemsPage() {
 			params.set('id', data.items[0].id)
 			setSearchParams(params)
 		}
-	}, [data?.items, selectedId])
+	}, [data?.items, selectedId, searchParams, setSearchParams])
 
 	const handleSelectItem = (id: string) => {
 		const params = new URLSearchParams(searchParams)
