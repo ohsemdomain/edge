@@ -17,5 +17,8 @@ export default defineConfig({
 			'~c': path.resolve(__dirname, '_client'),
 			'~s': path.resolve(__dirname, '_server')
 		}
+	},
+	build: {
+		chunkSizeWarningLimit: 600
 	}
 })
