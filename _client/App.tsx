@@ -143,7 +143,7 @@ function App() {
 						</Routes>
 					</AppShell.Main>
 				</AppShell>
-				<Toaster position='bottom-right' />
+				<Toaster position='top-right' />
 			</QueryClientProvider>
 		</trpc.Provider>
 	)

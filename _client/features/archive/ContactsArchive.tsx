@@ -19,14 +19,12 @@ export function ContactsArchive() {
 	const updateStatusMutation = trpc.contacts.updateStatus.useMutation({
 		onSuccess: () => {
 			refetch()
-			toast.success('Contact activated')
 		}
 	})
 
 	const deleteMutation = trpc.contacts.delete.useMutation({
 		onSuccess: () => {
 			refetch()
-			toast.success('Contact deleted')
 		}
 	})
 
@@ -48,12 +46,20 @@ export function ContactsArchive() {
 	}
 
 	const handleActivate = (id: string) => {
-		updateStatusMutation.mutate({ id, status: 'active' })
+		toast.promise(updateStatusMutation.mutateAsync({ id, status: 'active' }), {
+			loading: 'Activating...',
+			success: 'Contact activated',
+			error: 'Could not activate'
+		})
 	}
 
 	const handleDelete = (id: string) => {
 		if (window.confirm('Permanently delete this contact?')) {
-			deleteMutation.mutate(id)
+			toast.promise(deleteMutation.mutateAsync(id), {
+				loading: 'Deleting...',
+				success: 'Contact deleted',
+				error: 'Could not delete'
+			})
 		}
 	}
 

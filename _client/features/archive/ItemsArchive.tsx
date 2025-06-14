@@ -29,14 +29,12 @@ export function ItemsArchive() {
 	const updateStatusMutation = trpc.items.updateStatus.useMutation({
 		onSuccess: () => {
 			refetch()
-			toast.success('Item activated')
 		}
 	})
 
 	const deleteMutation = trpc.items.delete.useMutation({
 		onSuccess: () => {
 			refetch()
-			toast.success('Item deleted')
 		}
 	})
 
@@ -58,12 +56,20 @@ export function ItemsArchive() {
 	}
 
 	const handleActivate = (id: string) => {
-		updateStatusMutation.mutate({ id, status: 'active' })
+		toast.promise(updateStatusMutation.mutateAsync({ id, status: 'active' }), {
+			loading: 'Activating...',
+			success: 'Item activated',
+			error: 'Could not activate'
+		})
 	}
 
 	const handleDelete = (id: string) => {
 		if (window.confirm('Permanently delete this item?')) {
-			deleteMutation.mutate(id)
+			toast.promise(deleteMutation.mutateAsync(id), {
+				loading: 'Deleting...',
+				success: 'Item deleted',
+				error: 'Could not delete'
+			})
 		}
 	}
 

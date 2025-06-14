@@ -33,7 +33,6 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	const createMutation = trpc.items.create.useMutation({
 		onSuccess: (data) => {
 			utils.items.list.invalidate()
-			toast.success('Item created')
 			navigate(`/items?id=${data.id}`)
 		}
 	})
@@ -41,16 +40,23 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	const updateMutation = trpc.items.update.useMutation({
 		onSuccess: () => {
 			utils.items.list.invalidate()
-			toast.success('Item updated')
 			navigate(`/items?id=${itemId}`)
 		}
 	})
 
 	const handleSubmit = () => {
 		if (mode === 'create') {
-			createMutation.mutate(formData)
+			toast.promise(createMutation.mutateAsync(formData), {
+				loading: 'Saving...',
+				success: 'Item created',
+				error: 'Could not save'
+			})
 		} else if (itemId) {
-			updateMutation.mutate({ id: itemId, ...formData })
+			toast.promise(updateMutation.mutateAsync({ id: itemId, ...formData }), {
+				loading: 'Saving...',
+				success: 'Item updated',
+				error: 'Could not save'
+			})
 		}
 	}
 

@@ -23,7 +23,6 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 	const updateStatusMutation = trpc.contacts.updateStatus.useMutation({
 		onSuccess: () => {
 			utils.contacts.list.invalidate()
-			toast.success('Contact archived')
 			navigate('/contacts')
 		}
 	})
@@ -34,7 +33,11 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 
 	const handleArchive = () => {
 		if (window.confirm('Archive this contact?')) {
-			updateStatusMutation.mutate({ id: contact.id, status: 'inactive' })
+			toast.promise(updateStatusMutation.mutateAsync({ id: contact.id, status: 'inactive' }), {
+				loading: 'Archiving...',
+				success: 'Contact archived',
+				error: 'Could not archive'
+			})
 		}
 	}
 

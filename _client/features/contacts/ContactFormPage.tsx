@@ -32,7 +32,6 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 	const createMutation = trpc.contacts.create.useMutation({
 		onSuccess: (data) => {
 			utils.contacts.list.invalidate()
-			toast.success('Contact created')
 			navigate(`/contacts?id=${data.id}`)
 		}
 	})
@@ -40,16 +39,23 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 	const updateMutation = trpc.contacts.update.useMutation({
 		onSuccess: () => {
 			utils.contacts.list.invalidate()
-			toast.success('Contact updated')
 			navigate(`/contacts?id=${contactId}`)
 		}
 	})
 
 	const handleSubmit = () => {
 		if (mode === 'create') {
-			createMutation.mutate(formData)
+			toast.promise(createMutation.mutateAsync(formData), {
+				loading: 'Saving...',
+				success: 'Contact created',
+				error: 'Could not save'
+			})
 		} else if (contactId) {
-			updateMutation.mutate({ id: contactId, ...formData })
+			toast.promise(updateMutation.mutateAsync({ id: contactId, ...formData }), {
+				loading: 'Saving...',
+				success: 'Contact updated',
+				error: 'Could not save'
+			})
 		}
 	}
 

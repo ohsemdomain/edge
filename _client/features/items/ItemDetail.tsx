@@ -23,7 +23,6 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 	const updateStatusMutation = trpc.items.updateStatus.useMutation({
 		onSuccess: () => {
 			utils.items.list.invalidate()
-			toast.success('Item archived')
 			navigate('/items')
 		}
 	})
@@ -34,7 +33,11 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 
 	const handleArchive = () => {
 		if (window.confirm('Archive this item?')) {
-			updateStatusMutation.mutate({ id: item.id, status: 'inactive' })
+			toast.promise(updateStatusMutation.mutateAsync({ id: item.id, status: 'inactive' }), {
+				loading: 'Archiving...',
+				success: 'Item archived',
+				error: 'Could not archive'
+			})
 		}
 	}
 
