@@ -24,10 +24,9 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 	})
 
 	// Client-side filter
-	const filteredItems =
-		data?.items.filter((item) =>
-			search ? item.name.toLowerCase().includes(search.toLowerCase()) : true
-		) || []
+	const filteredItems = search
+		? data?.items?.filter((item) => item.name.toLowerCase().includes(search.toLowerCase())) || []
+		: data?.items || []
 
 	const handleSearch = (value: string) => {
 		setSearch(value)

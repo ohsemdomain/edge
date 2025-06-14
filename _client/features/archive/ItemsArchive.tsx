@@ -2,7 +2,6 @@ import {
 	ActionIcon,
 	Card,
 	Group,
-	Pagination,
 	ScrollArea,
 	Stack,
 	Text,
@@ -10,19 +9,17 @@ import {
 	Tooltip
 } from '@mantine/core'
 import { CheckCircle, Search, Trash } from 'lucide-react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { useSearchParams } from 'react-router-dom'
 import { trpc } from '~c/utils/trpc'
 
 export function ItemsArchive() {
-	const [searchParams, setSearchParams] = useSearchParams()
-	const search = searchParams.get('search') || ''
-	const page = Number(searchParams.get('page')) || 1
+	const [search, setSearch] = useState('')
 
 	const { data, refetch } = trpc.items.list.useQuery({
-		search,
-		page,
-		limit: 10,
+		search: '', // Always empty for server
+		page: 1,
+		limit: 1000, // Get all items
 		status: 'inactive'
 	})
 
@@ -38,22 +35,10 @@ export function ItemsArchive() {
 		}
 	})
 
-	const handleSearch = (value: string) => {
-		const params = new URLSearchParams(searchParams)
-		if (value) {
-			params.set('search', value)
-			params.set('page', '1')
-		} else {
-			params.delete('search')
-		}
-		setSearchParams(params)
-	}
-
-	const handlePageChange = (newPage: number) => {
-		const params = new URLSearchParams(searchParams)
-		params.set('page', newPage.toString())
-		setSearchParams(params)
-	}
+	// Client-side filter
+	const filteredItems = search
+		? data?.items?.filter((item) => item.name.toLowerCase().includes(search.toLowerCase())) || []
+		: data?.items || []
 
 	const handleActivate = (id: string) => {
 		toast.promise(updateStatusMutation.mutateAsync({ id, status: 'active' }), {
@@ -79,12 +64,12 @@ export function ItemsArchive() {
 				placeholder='Search archived items...'
 				leftSection={<Search size={16} />}
 				value={search}
-				onChange={(e) => handleSearch(e.target.value)}
+				onChange={(e) => setSearch(e.target.value)}
 			/>
 
 			<ScrollArea style={{ flex: 1 }}>
 				<Stack gap='xs'>
-					{data?.items.map((item) => (
+					{filteredItems.map((item) => (
 						<Card key={item.id} padding='sm' withBorder>
 							<Group justify='space-between'>
 								<div>
@@ -123,16 +108,7 @@ export function ItemsArchive() {
 						</Card>
 					))}
 				</Stack>
-				{data?.totalItems === 0 && (
-					<Text c='dimmed' ta='center'>
-						No archived items
-					</Text>
-				)}
 			</ScrollArea>
-
-			{data && data.totalPages > 1 && (
-				<Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />
-			)}
 		</Stack>
 	)
 }
