@@ -1,4 +1,4 @@
-import { Box, Flex, ScrollArea, Tabs } from '@mantine/core'
+import { Box, Flex, Tabs } from '@mantine/core'
 import { ContactsArchive } from './ContactsArchive'
 import { ItemsArchive } from './ItemsArchive'
 
