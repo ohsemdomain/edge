@@ -121,7 +121,7 @@ function App() {
 									to={item.href}
 									label={item.label}
 									leftSection={<item.icon size={20} />}
-									active={location.pathname.startsWith(item.href) && item.href !== '/'}
+									active={item.href === '/' ? location.pathname === '/' : location.pathname.startsWith(item.href)}
 									onClick={toggle}
 								/>
 							))}
