@@ -1,4 +1,4 @@
-import { Button, Card, Pagination, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Card, Group, Pagination, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
 import { Plus, Search } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { trpc } from '~c/utils/trpc'
@@ -36,13 +36,20 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 
 	return (
 		<Stack h='100%' gap='sm'>
-			<Button leftSection={<Plus size={16} />} onClick={() => navigate('/items/new')} fullWidth>
-				Add Item
-			</Button>
+			<Group gap='sm' align='stretch'>
+				<TextInput
+					placeholder='Search items...'
+					leftSection={<Search size={16} />}
+					value={search}
+					onChange={(e) => handleSearch(e.target.value)}
+					style={{ flex: 1 }}
+				/>
+				<ActionIcon size='input-sm' variant='filled' onClick={() => navigate('/items/new')}>
+					<Plus size={18} />
+				</ActionIcon>
+			</Group>
 
-			<TextInput placeholder='Search items...' leftSection={<Search size={16} />} value={search} onChange={(e) => handleSearch(e.target.value)} />
-
-			<ScrollArea flex={1}>
+			<ScrollArea flex={1} type='never'>
 				<Stack gap='xs'>
 					{data?.items.map((item) => (
 						<Card
@@ -52,8 +59,8 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 							onClick={() => onSelect(item.id)}
 							style={{
 								cursor: 'pointer',
-								backgroundColor: selectedId === item.id ? 'var(--mantine-color-blue-0)' : undefined,
-								borderColor: selectedId === item.id ? 'var(--mantine-color-blue-5)' : undefined
+								backgroundColor: selectedId === item.id ? 'var(--mantine-color-gray-1)' : undefined,
+								borderColor: selectedId === item.id ? 'var(--mantine-color-gray-4)' : undefined
 							}}
 						>
 							<Text fw={500}>{item.name}</Text>

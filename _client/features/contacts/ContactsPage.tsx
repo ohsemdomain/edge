@@ -38,12 +38,12 @@ export function ContactsPage() {
 
 	return (
 		<>
-			<Grid gutter='md'>
-				<Grid.Col span={{ base: 12, lg: 4 }}>
+			<Grid gutter='md' p='md' style={{ height: '100%', display: 'flex' }}>
+			<Grid.Col h='100%' span={{ base: 12, lg: 4 }}>
 					<ContactsList selectedId={selectedId} onSelect={handleSelectContact} />
 				</Grid.Col>
 
-				<Grid.Col span={8} visibleFrom='lg'>
+				<Grid.Col h='100%' span={8} visibleFrom='lg'>
 					{selectedId ? <ContactDetail contactId={selectedId} /> : null}
 				</Grid.Col>
 			</Grid>

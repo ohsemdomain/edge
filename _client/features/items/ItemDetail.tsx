@@ -1,4 +1,4 @@
-import { Button, Card, Group, ScrollArea, Stack, Text, Title } from '@mantine/core'
+import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -39,9 +39,16 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 	}
 
 	return (
-		<Card h='100%' padding='lg'>
-			<Stack>
-				<Group justify='space-between' align='start'>
+		<Paper h='100%' withBorder style={{ overflow: 'hidden' }}>
+			<Stack h='100%' gap={0}>
+				<Group
+					bg='gray.0'
+					p='md'
+					px={{ base: 'md', lg: 'xl' }}
+					justify='space-between'
+					align='center'
+					className='border-b border-gray-200'
+				>
 					<div>
 						<Title order={2}>{item.name}</Title>
 						<Text c='dimmed' size='sm'>
@@ -49,17 +56,26 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 						</Text>
 					</div>
 					<Group>
-						<Button leftSection={<Edit size={16} />} onClick={() => navigate(`/items/edit/${item.id}`)}>
+						<Button
+							leftSection={<Edit size={16} />}
+							onClick={() => navigate(`/items/edit/${item.id}`)}
+						>
 							Edit
 						</Button>
-						<Button variant='subtle' leftSection={<Archive size={16} />} onClick={handleArchive} loading={updateStatusMutation.isPending}>
+						<Button
+							bg='gray.1'
+							c='dimmed'
+							leftSection={<Archive size={16} />}
+							onClick={handleArchive}
+							loading={updateStatusMutation.isPending}
+						>
 							Mark as Inactive
 						</Button>
 					</Group>
 				</Group>
 
 				<ScrollArea flex={1}>
-					<Stack gap='md' mt='xl'>
+					<Stack p={{ base: 'md', lg: 'xl' }}>
 						<div>
 							<Text size='sm' c='dimmed'>
 								Name
@@ -80,11 +96,13 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							<Text size='sm' c='dimmed'>
 								Created
 							</Text>
-							<Text className='geist'>{formatDate(Math.floor(new Date(item.createdAt).getTime() / 1000))}</Text>
+							<Text className='geist'>
+								{formatDate(Math.floor(new Date(item.createdAt).getTime() / 1000))}
+							</Text>
 						</div>
 					</Stack>
 				</ScrollArea>
 			</Stack>
-		</Card>
+		</Paper>
 	)
 }

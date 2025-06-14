@@ -26,3 +26,7 @@
 	background-color: var(--color-blue-700) !important;
 	border-radius: 5px;
 }
+
+.mantine-AppShell-header {
+	border-bottom: 1px solid var(--color-gray-200);
+}

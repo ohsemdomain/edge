@@ -38,18 +38,25 @@ export function ItemsPage() {
 
 	return (
 		<>
-			<Grid gutter='md' h='calc(100vh - 120px)'>
-				<Grid.Col span={{ base: 12, lg: 4 }} h='100%' style={{ overflow: 'hidden' }}>
+			<Grid gutter='md' p='md' style={{ height: '100%', display: 'flex' }}>
+				<Grid.Col h='100%' span={{ base: 12, lg: 4 }}>
 					<ItemsList selectedId={selectedId} onSelect={handleSelectItem} />
 				</Grid.Col>
 
-				<Grid.Col span={8} h='100%' style={{ overflow: 'hidden' }} visibleFrom='lg'>
+				<Grid.Col h='100%' span={8} visibleFrom='lg'>
 					{selectedId ? <ItemDetail itemId={selectedId} /> : null}
 				</Grid.Col>
 			</Grid>
 
 			{/* Mobile Drawer */}
-			<Drawer opened={drawerOpened} onClose={closeDrawer} position='right' size='100%' hiddenFrom='lg' title='Item Details'>
+			<Drawer
+				opened={drawerOpened}
+				onClose={closeDrawer}
+				position='right'
+				size='100%'
+				hiddenFrom='lg'
+				title='Item Details'
+			>
 				{selectedId ? <ItemDetail itemId={selectedId} /> : null}
 			</Drawer>
 		</>

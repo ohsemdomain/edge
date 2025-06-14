@@ -1,4 +1,13 @@
-import { Button, Card, Pagination, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
+import {
+	ActionIcon,
+	Card,
+	Group,
+	Pagination,
+	ScrollArea,
+	Stack,
+	Text,
+	TextInput
+} from '@mantine/core'
 import { Plus, Search } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { trpc } from '~c/utils/trpc'
@@ -36,13 +45,20 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 
 	return (
 		<Stack h='100%' gap='sm'>
-			<Button leftSection={<Plus size={16} />} onClick={() => navigate('/contacts/new')} fullWidth>
-				Add Contact
-			</Button>
+			<Group gap='sm' align='stretch'>
+				<TextInput
+					placeholder='Search contacts...'
+					leftSection={<Search size={16} />}
+					value={search}
+					onChange={(e) => handleSearch(e.target.value)}
+					style={{ flex: 1 }}
+				/>
+				<ActionIcon size='input-sm' variant='filled' onClick={() => navigate('/contacts/new')}>
+					<Plus size={18} />
+				</ActionIcon>
+			</Group>
 
-			<TextInput placeholder='Search contacts...' leftSection={<Search size={16} />} value={search} onChange={(e) => handleSearch(e.target.value)} />
-
-			<ScrollArea flex={1}>
+			<ScrollArea flex={1} type='never'>
 				<Stack gap='xs'>
 					{data?.contacts.map((contact) => (
 						<Card
@@ -52,8 +68,9 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 							onClick={() => onSelect(contact.id)}
 							style={{
 								cursor: 'pointer',
-								backgroundColor: selectedId === contact.id ? 'var(--mantine-color-blue-0)' : undefined,
-								borderColor: selectedId === contact.id ? 'var(--mantine-color-blue-5)' : undefined
+								backgroundColor:
+									selectedId === contact.id ? 'var(--mantine-color-gray-1)' : undefined,
+								borderColor: selectedId === contact.id ? 'var(--mantine-color-gray-4)' : undefined
 							}}
 						>
 							<Text fw={500}>{contact.name}</Text>
@@ -65,7 +82,9 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 				</Stack>
 			</ScrollArea>
 
-			{data && data.totalPages > 1 && <Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />}
+			{data && data.totalPages > 1 && (
+				<Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />
+			)}
 		</Stack>
 	)
 }

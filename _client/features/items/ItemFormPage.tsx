@@ -1,4 +1,5 @@
-import { Button, Card, Container, Group, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Box, Button, Group, Stack, TextInput, Title } from '@mantine/core'
+import { MoveLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -15,7 +16,10 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	const utils = trpc.useUtils()
 
 	// Load item data for edit mode
-	const { data: itemsData } = trpc.items.list.useQuery({ search: '', page: 1, limit: 100 }, { enabled: mode === 'edit' })
+	const { data: itemsData } = trpc.items.list.useQuery(
+		{ search: '', page: 1, limit: 100 },
+		{ enabled: mode === 'edit' }
+	)
 
 	useEffect(() => {
 		if (mode === 'edit' && itemId && itemsData) {
@@ -54,17 +58,24 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	const canSubmit = formData.name && !isLoading
 
 	return (
-		<Container size='sm' mt='xl'>
-			<Card padding='lg'>
-				<Stack>
+		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
+			<Box maw={800} w='100%' p='md' style={{ overflow: 'hidden' }}>
+				<Group bg='gray.0' justify='space-between' align='center'>
 					<div>
 						<Title order={2}>{mode === 'create' ? 'New Item' : 'Edit Item'}</Title>
-						<Text c='dimmed' size='sm'>
-							{mode === 'create' ? 'Add a new item' : 'Update item information'}
-						</Text>
 					</div>
-
-					<Stack gap='md' mt='xl'>
+					<Group>
+						<Button
+							leftSection={<MoveLeft size={16} />}
+							onClick={() => navigate('/items')}
+							disabled={isLoading}
+						>
+							Back
+						</Button>
+					</Group>
+				</Group>
+				<Stack mt='xl'>
+					<Stack gap='md'>
 						<TextInput
 							label='Name'
 							placeholder='Enter item name'
@@ -73,7 +84,6 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 							required
 						/>
 					</Stack>
-
 					<Group mt='xl'>
 						<Button onClick={handleSubmit} disabled={!canSubmit} loading={isLoading}>
 							{mode === 'create' ? 'Create' : 'Save'}
@@ -83,7 +93,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 						</Button>
 					</Group>
 				</Stack>
-			</Card>
-		</Container>
+			</Box>
+		</Stack>
 	)
 }

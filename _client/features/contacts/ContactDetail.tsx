@@ -1,4 +1,4 @@
-import { Button, Card, Group, Stack, Text, Title } from '@mantine/core'
+import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -39,9 +39,16 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 	}
 
 	return (
-		<Card padding='lg'>
-			<Stack>
-				<Group justify='space-between' align='start'>
+		<Paper h='100%' withBorder style={{ overflow: 'hidden' }}>
+			<Stack h='100%' gap={0}>
+				<Group
+					bg='gray.0'
+					p='md'
+					px={{ base: 'md', lg: 'xl' }}
+					justify='space-between'
+					align='center'
+					className='border-b border-gray-200'
+				>
 					<div>
 						<Title order={2}>{contact.name}</Title>
 						<Text c='dimmed' size='sm'>
@@ -49,40 +56,53 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 						</Text>
 					</div>
 					<Group>
-						<Button leftSection={<Edit size={16} />} onClick={() => navigate(`/contacts/edit/${contact.id}`)}>
+						<Button
+							leftSection={<Edit size={16} />}
+							onClick={() => navigate(`/contacts/edit/${contact.id}`)}
+						>
 							Edit
 						</Button>
-						<Button variant='subtle' leftSection={<Archive size={16} />} onClick={handleArchive} loading={updateStatusMutation.isPending}>
+						<Button
+							bg='gray.1'
+							c='dimmed'
+							leftSection={<Archive size={16} />}
+							onClick={handleArchive}
+							loading={updateStatusMutation.isPending}
+						>
 							Mark as Inactive
 						</Button>
 					</Group>
 				</Group>
 
-				<Stack gap='md' mt='xl'>
-					<div>
-						<Text size='sm' c='dimmed'>
-							Name
-						</Text>
-						<Text size='lg'>{contact.name}</Text>
-					</div>
+				<ScrollArea flex={1}>
+					<Stack p={{ base: 'md', lg: 'xl' }}>
+						<div>
+							<Text size='sm' c='dimmed'>
+								Name
+							</Text>
+							<Text size='lg'>{contact.name}</Text>
+						</div>
 
-					<div>
-						<Text size='sm' c='dimmed'>
-							Phone
-						</Text>
-						<Text size='lg' className='geist'>
-							{contact.phone}
-						</Text>
-					</div>
+						<div>
+							<Text size='sm' c='dimmed'>
+								Phone
+							</Text>
+							<Text size='lg' className='geist'>
+								{contact.phone}
+							</Text>
+						</div>
 
-					<div>
-						<Text size='sm' c='dimmed'>
-							Created
-						</Text>
-						<Text className='geist'>{formatDate(Math.floor(new Date(contact.createdAt).getTime() / 1000))}</Text>
-					</div>
-				</Stack>
+						<div>
+							<Text size='sm' c='dimmed'>
+								Created
+							</Text>
+							<Text className='geist'>
+								{formatDate(Math.floor(new Date(contact.createdAt).getTime() / 1000))}
+							</Text>
+						</div>
+					</Stack>
+				</ScrollArea>
 			</Stack>
-		</Card>
+		</Paper>
 	)
 }

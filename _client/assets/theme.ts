@@ -1,4 +1,4 @@
-import { createTheme, rem } from '@mantine/core'
+import { createTheme, px, rem } from '@mantine/core'
 
 export const theme = createTheme({
 	// Primary color
@@ -17,7 +17,7 @@ export const theme = createTheme({
 
 	radius: {
 		xs: rem(2),
-		sm: rem(5),
+		sm: rem(6),
 		md: rem(8),
 		lg: rem(12),
 		xl: rem(16)
@@ -34,7 +34,19 @@ export const theme = createTheme({
 		},
 		Card: {
 			defaultProps: {
-				shadow: 'none'
+				shadow: 'none',
+				radius: 'sm'
+			}
+		},
+		Paper: {
+			defaultProps: {
+				shadow: 'none',
+				radius: 'lg'
+			}
+		},
+		TextInput: {
+			defaultProps: {
+				radius: 'sm'
 			}
 		}
 	}

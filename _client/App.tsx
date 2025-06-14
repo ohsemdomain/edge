@@ -43,21 +43,21 @@ function App() {
 	return (
 		<trpc.Provider client={trpcClient} queryClient={queryClient}>
 			<QueryClientProvider client={queryClient}>
-				<AppShell layout='alt' header={{ height: 60 }} navbar={{ width: 260, breakpoint: 'lg', collapsed: { mobile: !opened } }} padding='md'>
-					<AppShell.Header>
+				<AppShell withBorder={false} layout='alt' header={{ height: 70 }} navbar={{ width: 260, breakpoint: 'lg', collapsed: { mobile: !opened } }}>
+					<AppShell.Header bg='gray.1'>
 						<Group h='100%' px='md' justify='space-between'>
 							<Group>
 								<ActionIcon className='mantine-hidden-from-lg' onClick={toggle} variant='transparent' size='lg'>
 									<SquareChevronRight size='xl' />
 								</ActionIcon>
-								<Title order={3} fw={600}>
+								<Title order={2} fw={600}>
 									{currentPage.label}
 								</Title>
 							</Group>
 						</Group>
 					</AppShell.Header>
-					<AppShell.Navbar bg='dark.9' style={{ withBorder: 'false' }}>
-						<AppShell.Section grow p='md' component={ScrollArea}>
+					<AppShell.Navbar bg='dark.9'>
+						<AppShell.Section grow p='md' mt={20} component={ScrollArea} type="never">
 							{navigation.map((item) => (
 								<NavLink
 									key={item.href}
@@ -71,7 +71,7 @@ function App() {
 							))}
 						</AppShell.Section>
 					</AppShell.Navbar>
-					<AppShell.Main>
+					<AppShell.Main bg='gray.0' style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
 						<Routes>
 							<Route path='/' element={<DashboardPage />} />
 							<Route path='/items' element={<ItemsPage />} />
