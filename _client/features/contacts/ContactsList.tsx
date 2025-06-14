@@ -91,8 +91,11 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 				style={{
 					height: '100%',
 					width: '100%',
-					overflow: 'auto'
+					overflow: 'auto',
+					scrollbarWidth: 'none', // Firefox
+					msOverflowStyle: 'none', // IE and Edge
 				}}
+				className="hide-scrollbar"
 			>
 				<div
 					style={{

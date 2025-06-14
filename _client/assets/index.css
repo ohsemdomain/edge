@@ -30,3 +30,8 @@
 .mantine-AppShell-header {
 	border-bottom: 1px solid var(--color-gray-200);
 }
+
+/* Hide scrollbars for virtual lists */
+.hide-scrollbar::-webkit-scrollbar {
+	display: none;
+}
