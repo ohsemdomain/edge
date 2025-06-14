@@ -3,13 +3,13 @@ import {
 	Badge,
 	Card,
 	Group,
-	ScrollArea,
 	Stack,
 	Text,
 	TextInput
 } from '@mantine/core'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { Plus, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { trpc } from '~c/utils/trpc'
 
@@ -22,6 +22,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 	const [searchParams, setSearchParams] = useSearchParams()
 	const navigate = useNavigate()
 	const [search, setSearch] = useState('')
+	const parentRef = useRef<HTMLDivElement>(null)
 
 	// Load all contacts at once
 	const { data } = trpc.contacts.list.useQuery({
@@ -38,6 +39,14 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 				contact.phone.includes(search)
 		  ) || []
 		: data?.contacts || []
+
+	// Virtual scrolling
+	const virtualizer = useVirtualizer({
+		count: filteredContacts.length,
+		getScrollElement: () => parentRef.current,
+		estimateSize: () => 70, // Estimated height of each contact item in pixels
+		overscan: 10 // Render 10 extra items outside viewport
+	})
 
 	const handleSearch = (value: string) => {
 		setSearch(value)
@@ -77,29 +86,58 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 				</ActionIcon>
 			</Group>
 
-			<ScrollArea flex={1} type='never'>
-				<Stack gap='xs'>
-					{filteredContacts.map((contact) => (
-						<Card
-							key={contact.id}
-							padding='sm'
-							withBorder
-							onClick={() => onSelect(contact.id)}
-							style={{
-								cursor: 'pointer',
-								backgroundColor:
-									selectedId === contact.id ? 'var(--mantine-color-gray-1)' : undefined,
-								borderColor: selectedId === contact.id ? 'var(--mantine-color-gray-4)' : undefined
-							}}
-						>
-							<Text fw={500}>{contact.name}</Text>
-							<Text className='geist' size='sm' c='dimmed'>
-								{contact.phone}
-							</Text>
-						</Card>
-					))}
-				</Stack>
-			</ScrollArea>
+			<div
+				ref={parentRef}
+				style={{
+					height: '100%',
+					width: '100%',
+					overflow: 'auto'
+				}}
+			>
+				<div
+					style={{
+						height: `${virtualizer.getTotalSize()}px`,
+						width: '100%',
+						position: 'relative'
+					}}
+				>
+					{virtualizer.getVirtualItems().map((virtualItem) => {
+						const contact = filteredContacts[virtualItem.index]
+						return (
+							<div
+								key={contact.id}
+								style={{
+									position: 'absolute',
+									top: 0,
+									left: 0,
+									width: '100%',
+									height: `${virtualItem.size}px`,
+									transform: `translateY(${virtualItem.start}px)`,
+									paddingBottom: '8px'
+								}}
+							>
+								<Card
+									padding='sm'
+									withBorder
+									radius={0}
+									onClick={() => onSelect(contact.id)}
+									style={{
+										cursor: 'pointer',
+										backgroundColor:
+											selectedId === contact.id ? 'var(--mantine-color-gray-1)' : undefined,
+										borderColor: selectedId === contact.id ? 'var(--mantine-color-gray-4)' : undefined
+									}}
+								>
+									<Text fw={500}>{contact.name}</Text>
+									<Text className='geist' size='sm' c='dimmed'>
+										{contact.phone}
+									</Text>
+								</Card>
+							</div>
+						)
+					})}
+				</div>
+			</div>
 		</Stack>
 	)
 }
