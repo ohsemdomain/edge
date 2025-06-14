@@ -81,7 +81,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 						/>
 					</Stack>
 					<Group mt='xl'>
-						<Button onClick={handleSubmit} disabled={!canSubmit} loading={isLoading}>
+						<Button onClick={handleSubmit} disabled={!canSubmit}>
 							{mode === 'create' ? 'Create' : 'Save'}
 						</Button>
 						<Button variant='subtle' onClick={() => navigate('/items')} disabled={isLoading}>

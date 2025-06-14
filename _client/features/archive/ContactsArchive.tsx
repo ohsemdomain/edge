@@ -88,7 +88,7 @@ export function ContactsArchive() {
 										variant='light'
 										size='md'
 										onClick={() => handleActivate(contact.id)}
-										loading={updateStatusMutation.isPending}
+										disabled={updateStatusMutation.isPending}
 										aria-label='Mark as Active'
 									>
 										<CheckCircle size={14} />
@@ -101,7 +101,7 @@ export function ContactsArchive() {
 										color='red'
 										size='md'
 										onClick={() => handleDelete(contact.id)}
-										loading={deleteMutation.isPending}
+										disabled={deleteMutation.isPending}
 										aria-label='Delete'
 									>
 										<Trash size={14} />

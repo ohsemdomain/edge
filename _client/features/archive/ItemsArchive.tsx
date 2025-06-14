@@ -99,7 +99,7 @@ export function ItemsArchive() {
 											variant='light'
 											size='md'
 											onClick={() => handleActivate(item.id)}
-											loading={updateStatusMutation.isPending}
+											disabled={updateStatusMutation.isPending}
 											aria-label='Mark as Active'
 										>
 											<CheckCircle size={14} />
@@ -112,7 +112,7 @@ export function ItemsArchive() {
 											color='red'
 											size='md'
 											onClick={() => handleDelete(item.id)}
-											loading={deleteMutation.isPending}
+											disabled={deleteMutation.isPending}
 											aria-label='Delete'
 										>
 											<Trash size={14} />

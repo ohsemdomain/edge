@@ -70,7 +70,7 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							c='dimmed'
 							leftSection={<Archive size={16} />}
 							onClick={handleArchive}
-							loading={updateStatusMutation.isPending}
+							disabled={updateStatusMutation.isPending}
 						>
 							Mark as Inactive
 						</Button>
