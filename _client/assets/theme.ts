@@ -1,4 +1,4 @@
-import { createTheme, px, rem } from '@mantine/core'
+import { createTheme, rem } from '@mantine/core'
 
 export const theme = createTheme({
 	// Primary color
@@ -6,7 +6,18 @@ export const theme = createTheme({
 
 	// Define the blue color palette
 	colors: {
-		blue: ['#ecefff', '#d5dafb', '#a9b1f1', '#7a87e9', '#5362e1', '#3a4bdd', '#2c40dc', '#1f32c4', '#182cb0', '#0a259c']
+		blue: [
+			'#ecefff',
+			'#d5dafb',
+			'#a9b1f1',
+			'#7a87e9',
+			'#5362e1',
+			'#3a4bdd',
+			'#2c40dc',
+			'#1f32c4',
+			'#182cb0',
+			'#0a259c'
+		]
 	},
 
 	fontFamily: "'Inter Tight', 'Geist', sans-serif",
