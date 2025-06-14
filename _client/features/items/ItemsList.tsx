@@ -1,5 +1,7 @@
-import { ActionIcon, Card, Group, Pagination, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
+// _client/features/items/ItemsList.tsx
+import { ActionIcon, Badge, Card, Group, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
 import { Plus, Search } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { trpc } from '~c/utils/trpc'
 
@@ -11,32 +13,35 @@ interface ItemsListProps {
 export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 	const [searchParams, setSearchParams] = useSearchParams()
 	const navigate = useNavigate()
-	const search = searchParams.get('search') || ''
-	const page = Number(searchParams.get('page')) || 1
+	const [search, setSearch] = useState('')
 
-	const { data } = trpc.items.list.useQuery({ search, page, limit: 10 })
+	// Load all items at once
+	const { data } = trpc.items.list.useQuery({
+		search: '', // Always empty for server
+		page: 1,
+		limit: 1000, // Get all items
+		status: 'active'
+	})
+
+	// Client-side filter
+	const filteredItems =
+		data?.items.filter((item) =>
+			search ? item.name.toLowerCase().includes(search.toLowerCase()) : true
+		) || []
 
 	const handleSearch = (value: string) => {
-		const params = new URLSearchParams(searchParams)
+		setSearch(value)
+		// Still update URL for selected item clearing
 		if (value) {
-			params.set('search', value)
-			params.set('page', '1')
+			const params = new URLSearchParams(searchParams)
 			params.delete('id')
-		} else {
-			params.delete('search')
+			setSearchParams(params)
 		}
-		setSearchParams(params)
-	}
-
-	const handlePageChange = (newPage: number) => {
-		const params = new URLSearchParams(searchParams)
-		params.set('page', newPage.toString())
-		setSearchParams(params)
 	}
 
 	return (
 		<Stack h='100%' gap='sm'>
-			<Group gap='sm' align='stretch'>
+			<Group gap='xs' align='stretch'>
 				<TextInput
 					placeholder='Search items...'
 					leftSection={<Search size={16} />}
@@ -44,6 +49,19 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 					onChange={(e) => handleSearch(e.target.value)}
 					style={{ flex: 1 }}
 				/>
+				<Badge
+					size='lg'
+					radius='sm'
+					bg='gray.2'
+					c='gray.5'
+					style={{
+						height: 'var(--input-height, 36px)',
+						paddingInline: 12,
+						minWidth: 50
+					}}
+				>
+					{data?.totalItems || 0}
+				</Badge>
 				<ActionIcon size='input-sm' variant='filled' onClick={() => navigate('/items/new')}>
 					<Plus size={18} />
 				</ActionIcon>
@@ -51,7 +69,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 
 			<ScrollArea flex={1} type='never'>
 				<Stack gap='xs'>
-					{data?.items.map((item) => (
+					{filteredItems.map((item) => (
 						<Card
 							key={item.id}
 							padding='sm'
@@ -71,8 +89,6 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 					))}
 				</Stack>
 			</ScrollArea>
-
-			{data && data.totalPages > 1 && <Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />}
 		</Stack>
 	)
 }
