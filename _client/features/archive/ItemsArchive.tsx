@@ -1,4 +1,4 @@
-import { Button, Card, Group, Pagination, Stack, Text, TextInput } from '@mantine/core'
+import { Button, Card, Group, Pagination, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
 import { CheckCircle, Search, Trash } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSearchParams } from 'react-router-dom'
@@ -58,7 +58,7 @@ export function ItemsArchive() {
 	}
 
 	return (
-		<Stack>
+		<Stack h='100%'>
 			<TextInput
 				placeholder='Search archived items...'
 				leftSection={<Search size={16} />}
@@ -66,47 +66,50 @@ export function ItemsArchive() {
 				onChange={(e) => handleSearch(e.target.value)}
 			/>
 
-			<Stack gap='xs'>
-				{data?.items.map((item) => (
-					<Card key={item.id} padding='sm' withBorder>
-						<Group justify='space-between'>
-							<div>
-								<Text fw={500}>{item.name}</Text>
-								<Text size='sm' c='dimmed' className='geist'>
-									ID: {item.id.slice(0, 8)}...
-								</Text>
-							</div>
-							<Group>
-								<Button
-									size='xs'
-									leftSection={<CheckCircle size={14} />}
-									onClick={() => handleActivate(item.id)}
-									loading={updateStatusMutation.isPending}
-								>
-									Mark as Active
-								</Button>
-								<Button
-									size='xs'
-									color='red'
-									leftSection={<Trash size={14} />}
-									onClick={() => handleDelete(item.id)}
-									loading={deleteMutation.isPending}
-								>
-									Delete
-								</Button>
+			<ScrollArea style={{ flex: 1 }}>
+				<Stack gap='xs'>
+					{data?.items.map((item) => (
+						<Card key={item.id} padding='sm' withBorder>
+							<Group justify='space-between'>
+								<div>
+									<Text fw={500}>{item.name}</Text>
+									<Text size='sm' c='dimmed' className='geist'>
+										ID: {item.id.slice(0, 8)}...
+									</Text>
+								</div>
+								<Group>
+									<Button
+										size='xs'
+										leftSection={<CheckCircle size={14} />}
+										onClick={() => handleActivate(item.id)}
+										loading={updateStatusMutation.isPending}
+									>
+										Mark as Active
+									</Button>
+									<Button
+										size='xs'
+										color='red'
+										leftSection={<Trash size={14} />}
+										onClick={() => handleDelete(item.id)}
+										loading={deleteMutation.isPending}
+									>
+										Delete
+									</Button>
+								</Group>
 							</Group>
-						</Group>
-					</Card>
-				))}
-			</Stack>
+						</Card>
+					))}
+				</Stack>
+				{data?.totalItems === 0 && (
+					<Text c='dimmed' ta='center'>
+						No archived items
+					</Text>
+				)}
+			</ScrollArea>
 
-			{data?.totalItems === 0 && (
-				<Text c='dimmed' ta='center'>
-					No archived items
-				</Text>
+			{data && data.totalPages > 1 && (
+				<Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />
 			)}
-
-			{data && data.totalPages > 1 && <Pagination value={page} onChange={handlePageChange} total={data.totalPages} size='sm' />}
 		</Stack>
 	)
 }

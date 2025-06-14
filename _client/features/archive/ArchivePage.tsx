@@ -20,9 +20,7 @@ export function ArchivePage() {
 					</Tabs.Panel>
 
 					<Tabs.Panel value='items' pt='md' style={{ flex: 1, overflow: 'hidden' }}>
-						<ScrollArea h='100%'>
-							<ItemsArchive />
-						</ScrollArea>
+						<ItemsArchive />
 					</Tabs.Panel>
 				</Tabs>
 			</Box>
