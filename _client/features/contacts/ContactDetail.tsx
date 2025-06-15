@@ -40,7 +40,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 					className='border-b border-gray-200'
 				>
 					<div>
-						<Title order={2}>{contact.legal_name.toUpperCase()}</Title>
+						<Title order={2}>{contact.company_name.toUpperCase()}</Title>
 						<Text c='dimmed' size='sm'>
 							Contact Details
 						</Text>
@@ -72,10 +72,69 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 					<Stack p={{ base: 'md', lg: 'xl' }}>
 						<div>
 							<Text size='sm' c='dimmed'>
-								Legal Name
+								Company Name
 							</Text>
-							<Text size='lg'>{contact.legal_name.toUpperCase()}</Text>
+							<Text size='lg'>{contact.company_name.toUpperCase()}</Text>
 						</div>
+
+						<div>
+							<Text size='sm' c='dimmed'>
+								Person In Charge
+							</Text>
+							<Text size='lg'>{contact.person_incharge}</Text>
+						</div>
+
+						<div>
+							<Text size='sm' c='dimmed'>
+								Primary Phone
+							</Text>
+							<Text size='lg' className='geist'>
+								{contact.primary_phone}
+							</Text>
+						</div>
+
+						{contact.email && (
+							<div>
+								<Text size='sm' c='dimmed'>
+									Email
+								</Text>
+								<Text size='lg'>{contact.email}</Text>
+							</div>
+						)}
+
+						{contact.phone_alt_1 && (
+							<div>
+								<Text size='sm' c='dimmed'>
+									Alternative Phone 1
+								</Text>
+								<Text size='lg' className='geist'>
+									{contact.phone_alt_1}
+								</Text>
+							</div>
+						)}
+
+						{contact.phone_alt_2 && (
+							<div>
+								<Text size='sm' c='dimmed'>
+									Alternative Phone 2
+								</Text>
+								<Text size='lg' className='geist'>
+									{contact.phone_alt_2}
+								</Text>
+							</div>
+						)}
+
+						{contact.phone_alt_3 && (
+							<div>
+								<Text size='sm' c='dimmed'>
+									Alternative Phone 3
+								</Text>
+								<Text size='lg' className='geist'>
+									{contact.phone_alt_3}
+								</Text>
+							</div>
+						)}
+
 						<div>
 							<Text size='sm' c='dimmed'>
 								Type
@@ -84,6 +143,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 								{contact.is_supplier ? 'Supplier' : 'Client'}
 							</Text>
 						</div>
+
 						<div>
 							<Text size='sm' c='dimmed'>
 								ID

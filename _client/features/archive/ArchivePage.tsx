@@ -33,7 +33,10 @@ export function ArchivePage() {
 			count: archivedContacts?.totalItems || 0,
 			renderItem: (item) => (
 				<>
-					<Text fw={500}>{item.legal_name}</Text>
+					<Text fw={500}>{item.company_name.toUpperCase()}</Text>
+					<Text size='sm' c='dimmed'>
+						{item.person_incharge}
+					</Text>
 					<Text size='sm' c='dimmed'>
 						{item.is_supplier ? 'Supplier' : 'Client'}
 					</Text>
