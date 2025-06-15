@@ -96,6 +96,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 							min={0}
 							decimalScale={2}
 							hideControls
+							onFocus={(e) => e.target.select()}
 							required
 						/>
 					</Stack>

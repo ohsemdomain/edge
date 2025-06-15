@@ -130,9 +130,14 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 										borderColor: selectedId === contact.id ? 'var(--mantine-color-gray-4)' : undefined
 									}}
 								>
-									<Text fw={500}>{contact.legal_name}</Text>
+									<Group justify="space-between" align="start">
+										<Text fw={500}>{contact.legal_name}</Text>
+										<Text size='sm' fw={500}>
+											{contact.is_supplier ? 'Supplier' : 'Client'}
+										</Text>
+									</Group>
 									<Text className='geist' size='sm' c='dimmed'>
-										{contact.is_supplier ? 'Supplier' : 'Client'}
+										ID: {contact.id}
 									</Text>
 								</Card>
 							</div>

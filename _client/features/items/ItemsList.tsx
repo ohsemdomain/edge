@@ -123,15 +123,15 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 										borderColor: selectedId === item.id ? 'var(--mantine-color-gray-4)' : undefined
 									}}
 								>
-									<Text fw={500}>{item.name}</Text>
-									<Group justify="space-between">
-										<Text className='geist' size='sm' c='dimmed'>
-											ID: {item.id}
-										</Text>
+									<Group justify="space-between" align="start">
+										<Text fw={500}>{item.name}</Text>
 										<Text size='sm' fw={500}>
 											${item.unit_price.toFixed(2)}
 										</Text>
 									</Group>
+									<Text className='geist' size='sm' c='dimmed'>
+										ID: {item.id}
+									</Text>
 								</Card>
 							</div>
 						)
