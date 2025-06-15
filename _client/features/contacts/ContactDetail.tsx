@@ -86,6 +86,14 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 						</div>
 						<div>
 							<Text size='sm' c='dimmed'>
+								ID
+							</Text>
+							<Text size='lg' className='geist'>
+								{contact.id}
+							</Text>
+						</div>
+						<div>
+							<Text size='sm' c='dimmed'>
 								Created
 							</Text>
 							<Text className='geist'>
