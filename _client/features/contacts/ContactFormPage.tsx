@@ -1,4 +1,4 @@
-import { Box, Button, Group, Stack, Switch, Text, TextInput } from '@mantine/core'
+import { Box, Button, Group, ScrollArea, Stack, Switch, Text, TextInput } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -11,15 +11,15 @@ interface ContactFormPageProps {
 export function ContactFormPage({ mode }: ContactFormPageProps) {
 	const navigate = useNavigate()
 	const { id: contactId } = useParams()
-	const [formData, setFormData] = useState({ 
-		company_name: '', 
-		person_incharge: '', 
-		primary_phone: '', 
-		email: '', 
-		phone_alt_1: '', 
-		phone_alt_2: '', 
-		phone_alt_3: '', 
-		is_supplier: false 
+	const [formData, setFormData] = useState({
+		company_name: '',
+		person_incharge: '',
+		primary_phone: '',
+		email: '',
+		phone_alt_1: '',
+		phone_alt_2: '',
+		phone_alt_3: '',
+		is_supplier: false
 	})
 	const utils = trpc.useUtils()
 
@@ -33,15 +33,15 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 		if (mode === 'edit' && contactId && contactsData) {
 			const contact = contactsData.contacts.find((c) => c.id === contactId)
 			if (contact) {
-				setFormData({ 
-					company_name: contact.company_name, 
-					person_incharge: contact.person_incharge, 
-					primary_phone: contact.primary_phone, 
-					email: contact.email || '', 
-					phone_alt_1: contact.phone_alt_1 || '', 
-					phone_alt_2: contact.phone_alt_2 || '', 
-					phone_alt_3: contact.phone_alt_3 || '', 
-					is_supplier: contact.is_supplier 
+				setFormData({
+					company_name: contact.company_name,
+					person_incharge: contact.person_incharge,
+					primary_phone: contact.primary_phone,
+					email: contact.email || '',
+					phone_alt_1: contact.phone_alt_1 || '',
+					phone_alt_2: contact.phone_alt_2 || '',
+					phone_alt_3: contact.phone_alt_3 || '',
+					is_supplier: contact.is_supplier
 				})
 			}
 		}
@@ -78,12 +78,13 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 	}
 
 	const isLoading = createMutation.isPending || updateMutation.isPending
-	const canSubmit = formData.company_name && formData.person_incharge && formData.primary_phone && !isLoading
+	const canSubmit =
+		formData.company_name && formData.person_incharge && formData.primary_phone && !isLoading
 
 	return (
-		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
-			<Box maw={800} w='100%' p='md' style={{ overflow: 'hidden' }}>
-				<Group justify='space-between' align='center'>
+		<ScrollArea h='100%' type='never'>
+			<Box maw={800} w='100%' p='md' mx='auto' style={{ overflow: 'hidden' }}>
+				<Group mt='xl' justify='space-between' align='center'>
 					<Text>Placholder</Text>
 					<Text>Placholder</Text>
 				</Group>
@@ -159,6 +160,6 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 					</Group>
 				</Stack>
 			</Box>
-		</Stack>
+		</ScrollArea>
 	)
 }
