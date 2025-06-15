@@ -1,23 +1,59 @@
-import { Badge, Box, Flex, Group, Tabs } from '@mantine/core'
+// _client/features/archive/ArchivePage.tsx
+import { Badge, Box, Flex, Group, Tabs, Text } from '@mantine/core'
 import { trpc } from '~c/utils/trpc'
-import { ContactsArchive } from './ContactsArchive'
-import { ItemsArchive } from './ItemsArchive'
+import { GenericArchive } from './GenericArchive'
+
+interface ArchiveConfigItem {
+	key: 'contacts' | 'items'
+	label: string
+	count: number
+	renderItem: (item: any) => React.ReactNode
+}
 
 export function ArchivePage() {
-	// Get archived counts for badge display
+	// Get counts for all features
 	const { data: archivedContacts } = trpc.contacts.list.useQuery({
 		search: '',
 		page: 1,
 		limit: 1000,
-		status: 'inactive'
+		isActive: false
 	})
 
 	const { data: archivedItems } = trpc.items.list.useQuery({
 		search: '',
 		page: 1,
 		limit: 1000,
-		status: 'inactive'
+		isActive: false
 	})
+
+	const archiveConfig: ArchiveConfigItem[] = [
+		{
+			key: 'contacts',
+			label: 'Contacts',
+			count: archivedContacts?.totalItems || 0,
+			renderItem: (item) => (
+				<>
+					<Text fw={500}>{item.name}</Text>
+					<Text size='sm' c='dimmed'>
+						{item.phone}
+					</Text>
+				</>
+			)
+		},
+		{
+			key: 'items',
+			label: 'Items',
+			count: archivedItems?.totalItems || 0,
+			renderItem: (item) => (
+				<>
+					<Text fw={500}>{item.name}</Text>
+					<Text size='sm' c='dimmed' className='geist'>
+						ID: {item.id.slice(0, 8)}...
+					</Text>
+				</>
+			)
+		}
+	]
 
 	return (
 		<Flex h='100%' style={{ justifyContent: 'center', overflow: 'hidden' }}>
@@ -27,43 +63,28 @@ export function ArchivePage() {
 					style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
 				>
 					<Tabs.List>
-						<Tabs.Tab value='contacts'>
-							<Group gap='xs' align='center'>
-								Contacts
-								<Badge
-									size='xs'
-									radius='sm'
-									bg='gray.3'
-									c='gray.6'
-									style={{ minWidth: 20 }}
-								>
-									{archivedContacts?.totalItems || 0}
-								</Badge>
-							</Group>
-						</Tabs.Tab>
-						<Tabs.Tab value='items'>
-							<Group gap='xs' align='center'>
-								Items
-								<Badge
-									size='xs'
-									radius='sm'
-									bg='gray.3'
-									c='gray.6'
-									style={{ minWidth: 20 }}
-								>
-									{archivedItems?.totalItems || 0}
-								</Badge>
-							</Group>
-						</Tabs.Tab>
+						{archiveConfig.map((config) => (
+							<Tabs.Tab key={config.key} value={config.key}>
+								<Group gap='xs' align='center'>
+									{config.label}
+									<Badge size='xs' radius='sm' bg='gray.3' c='gray.6' style={{ minWidth: 20 }}>
+										{config.count}
+									</Badge>
+								</Group>
+							</Tabs.Tab>
+						))}
 					</Tabs.List>
 
-					<Tabs.Panel value='contacts' pt='md' style={{ flex: 1, overflow: 'hidden' }}>
-						<ContactsArchive />
-					</Tabs.Panel>
-
-					<Tabs.Panel value='items' pt='md' style={{ flex: 1, overflow: 'hidden' }}>
-						<ItemsArchive />
-					</Tabs.Panel>
+					{archiveConfig.map((config) => (
+						<Tabs.Panel
+							key={config.key}
+							value={config.key}
+							pt='md'
+							style={{ flex: 1, overflow: 'hidden' }}
+						>
+							<GenericArchive feature={config.key} renderItem={config.renderItem} />
+						</Tabs.Panel>
+					))}
 				</Tabs>
 			</Box>
 		</Flex>

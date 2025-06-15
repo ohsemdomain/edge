@@ -1,46 +1,59 @@
+// _server/routes/contacts.ts
 import { z } from 'zod'
+import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
 
-// Updated contact type with status
-const contacts: Array<{
+interface ContactRow {
 	id: string
 	name: string
 	phone: string
-	status: 'active' | 'inactive'
-	createdAt: Date
-}> = []
+	is_active: boolean
+	created_at: number
+}
+
+const archiveContactsRouter = createArchiveRouter('contacts')
 
 export const contactsRouter = router({
+	...archiveContactsRouter,
+
 	list: publicProcedure
 		.input(
 			z.object({
 				search: z.string().optional(),
 				page: z.number().default(1),
-				limit: z.number().default(10),
-				status: z.enum(['active', 'inactive']).default('active')
+				limit: z.number().default(1000),
+				isActive: z.boolean().default(true)
 			})
 		)
-		.query(({ input }) => {
-			let filtered = contacts.filter((c) => c.status === input.status)
+		.query(async ({ input, ctx }) => {
+			const { DB } = ctx.env
+			const { search, page, limit, isActive } = input
+			const offset = (page - 1) * limit
 
-			// Add search filter if provided
-			if (input.search) {
-				filtered = filtered.filter(
-					(contact) => contact.name.toLowerCase().includes(input.search!.toLowerCase()) || contact.phone.includes(input.search!)
-				)
+			let query = 'SELECT * FROM contacts WHERE is_active = ?'
+			const params: (string | number | boolean)[] = [isActive]
+
+			if (search) {
+				query += ' AND (name LIKE ? OR phone LIKE ?)'
+				params.push(`%${search}%`, `%${search}%`)
 			}
 
-			// Sort newest first
-			const sorted = [...filtered].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
+			params.push(limit, offset)
 
-			// Apply pagination
-			const start = (input.page - 1) * input.limit
-			const paginatedContacts = sorted.slice(start, start + input.limit)
+			const { results } = await DB.prepare(query)
+				.bind(...params)
+				.all<ContactRow>()
 
 			return {
-				contacts: paginatedContacts,
-				totalPages: 1, // Simplified since clients use high limits
-				totalItems: paginatedContacts.length
+				contacts: results.map((r) => ({
+					id: r.id,
+					name: r.name,
+					phone: r.phone,
+					is_active: r.is_active,
+					createdAt: new Date(r.created_at * 1000)
+				})),
+				totalItems: results.length
 			}
 		}),
 
@@ -51,16 +64,24 @@ export const contactsRouter = router({
 				phone: z.string().min(1)
 			})
 		)
-		.mutation(({ input }) => {
-			const newContact = {
-				id: crypto.randomUUID(),
+		.mutation(async ({ input, ctx }) => {
+			const { DB } = ctx.env
+			const id = crypto.randomUUID()
+			const createdAt = Math.floor(Date.now() / 1000)
+
+			await DB.prepare(
+				'INSERT INTO contacts (id, name, phone, is_active, created_at) VALUES (?, ?, ?, ?, ?)'
+			)
+				.bind(id, input.name, input.phone, true, createdAt)
+				.run()
+
+			return {
+				id,
 				name: input.name,
 				phone: input.phone,
-				status: 'active' as const,
-				createdAt: new Date()
+				is_active: true,
+				createdAt: new Date(createdAt * 1000)
 			}
-			contacts.push(newContact)
-			return newContact
 		}),
 
 	update: publicProcedure
@@ -71,34 +92,13 @@ export const contactsRouter = router({
 				phone: z.string().min(1)
 			})
 		)
-		.mutation(({ input }) => {
-			const index = contacts.findIndex((c) => c.id === input.id)
-			if (index === -1) throw new Error('Contact not found')
+		.mutation(async ({ input, ctx }) => {
+			const { DB } = ctx.env
 
-			contacts[index] = { ...contacts[index], name: input.name, phone: input.phone }
-			return contacts[index]
-		}),
+			await DB.prepare('UPDATE contacts SET name = ?, phone = ? WHERE id = ?')
+				.bind(input.name, input.phone, input.id)
+				.run()
 
-	updateStatus: publicProcedure
-		.input(
-			z.object({
-				id: z.string(),
-				status: z.enum(['active', 'inactive'])
-			})
-		)
-		.mutation(({ input }) => {
-			const index = contacts.findIndex((c) => c.id === input.id)
-			if (index === -1) throw new Error('Contact not found')
-
-			contacts[index] = { ...contacts[index], status: input.status }
-			return contacts[index]
-		}),
-
-	delete: publicProcedure.input(z.string()).mutation(({ input: id }) => {
-		const index = contacts.findIndex((c) => c.id === id)
-		if (index === -1) throw new Error('Contact not found')
-
-		contacts.splice(index, 1)
-		return { success: true }
-	})
+			return { success: true }
+		})
 })

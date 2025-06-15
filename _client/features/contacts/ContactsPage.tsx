@@ -16,7 +16,7 @@ export function ContactsPage() {
 		search: '',
 		page: 1,
 		limit: 1000,
-		status: 'active'
+		isActive: true
 	})
 
 	// Auto-select first contact if none selected on desktop

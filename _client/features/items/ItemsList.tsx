@@ -22,7 +22,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 		search: '', // Always empty for server
 		page: 1,
 		limit: 1000, // Get all items
-		status: 'active'
+		isActive: true
 	})
 
 	// Client-side filter

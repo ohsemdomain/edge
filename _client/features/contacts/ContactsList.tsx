@@ -29,7 +29,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 		search: '', // Always empty for server
 		page: 1,
 		limit: 1000, // Get all contacts
-		status: 'active'
+		isActive: true
 	})
 
 	// Client-side filter

@@ -1,7 +1,8 @@
+// _client/features/items/ItemDetail.tsx
 import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
-import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
+import { useArchiveActions } from '~c/hooks/useArchive'
 import { formatDate } from '~c/utils/formatter'
 import { trpc } from '~c/utils/trpc'
 
@@ -11,36 +12,21 @@ interface ItemDetailProps {
 
 export function ItemDetail({ itemId }: ItemDetailProps) {
 	const navigate = useNavigate()
-	const utils = trpc.useUtils()
 
-	// Use cached data from ItemsList query
 	const { data: itemsData } = trpc.items.list.useQuery({
 		search: '',
 		page: 1,
 		limit: 1000,
-		status: 'active'
+		isActive: true
 	})
 
-	const updateStatusMutation = trpc.items.updateStatus.useMutation({
-		onSuccess: () => {
-			utils.items.list.invalidate()
-			navigate('/items')
-		}
+	const { handleToggleActive, isToggling } = useArchiveActions('items', () => {
+		navigate('/items')
 	})
 
 	const item = itemsData?.items.find((i) => i.id === itemId)
 
 	if (!item) return null
-
-	const handleArchive = () => {
-		if (window.confirm('Archive this item?')) {
-			toast.promise(updateStatusMutation.mutateAsync({ id: item.id, status: 'inactive' }), {
-				loading: 'Archiving...',
-				success: 'Item archived',
-				error: 'Could not archive'
-			})
-		}
-	}
 
 	return (
 		<Paper h='100%' withBorder style={{ overflow: 'hidden' }}>
@@ -70,10 +56,14 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							bg='gray.1'
 							c='dimmed'
 							leftSection={<Archive size={16} />}
-							onClick={handleArchive}
-							disabled={updateStatusMutation.isPending}
+							onClick={() => {
+								if (window.confirm('Move this item to archive?')) {
+									handleToggleActive(item.id, true)
+								}
+							}}
+							disabled={isToggling}
 						>
-							Mark as Inactive
+							Archive
 						</Button>
 					</Group>
 				</Group>
@@ -100,9 +90,7 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							<Text size='sm' c='dimmed'>
 								Created
 							</Text>
-							<Text className='geist'>
-								{formatDate(Math.floor(new Date(item.createdAt).getTime() / 1000))}
-							</Text>
+							<Text className='geist'>{formatDate(item.created_at)}</Text>
 						</div>
 					</Stack>
 				</ScrollArea>

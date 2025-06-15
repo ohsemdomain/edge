@@ -3,9 +3,9 @@ CREATE TABLE IF NOT EXISTS contacts (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   phone TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'active',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at INTEGER NOT NULL
 );
 
-CREATE INDEX idx_contacts_status ON contacts(status);
+CREATE INDEX idx_contacts_active ON contacts(is_active);
 CREATE INDEX idx_contacts_created_at ON contacts(created_at);

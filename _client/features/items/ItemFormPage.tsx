@@ -17,7 +17,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 
 	// Use cached data from ItemsList query for edit mode
 	const { data: itemsData } = trpc.items.list.useQuery(
-		{ search: '', page: 1, limit: 1000, status: 'active' },
+		{ search: '', page: 1, limit: 1000, isActive: true },
 		{ enabled: mode === 'edit' }
 	)
 

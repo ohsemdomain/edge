@@ -2,9 +2,9 @@
 CREATE TABLE IF NOT EXISTS items (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'active',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at INTEGER NOT NULL
 );
 
-CREATE INDEX idx_items_status ON items(status);
+CREATE INDEX idx_items_active ON items(is_active);
 CREATE INDEX idx_items_created_at ON items(created_at);

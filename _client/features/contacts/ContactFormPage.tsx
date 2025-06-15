@@ -16,7 +16,7 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 
 	// Use cached data from ContactsList query for edit mode
 	const { data: contactsData } = trpc.contacts.list.useQuery(
-		{ search: '', page: 1, limit: 1000, status: 'active' },
+		{ search: '', page: 1, limit: 1000, isActive: true },
 		{ enabled: mode === 'edit' }
 	)
 

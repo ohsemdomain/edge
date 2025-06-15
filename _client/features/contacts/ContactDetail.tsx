@@ -1,7 +1,8 @@
+// _client/features/contacts/ContactDetail.tsx
 import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
-import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
+import { useArchiveActions } from '~c/hooks/useArchive'
 import { formatDate } from '~c/utils/formatter'
 import { trpc } from '~c/utils/trpc'
 
@@ -11,36 +12,21 @@ interface ContactDetailProps {
 
 export function ContactDetail({ contactId }: ContactDetailProps) {
 	const navigate = useNavigate()
-	const utils = trpc.useUtils()
 
-	// Use cached data from ContactsList query
 	const { data: contactsData } = trpc.contacts.list.useQuery({
 		search: '',
 		page: 1,
 		limit: 1000,
-		status: 'active'
+		isActive: true
 	})
 
-	const updateStatusMutation = trpc.contacts.updateStatus.useMutation({
-		onSuccess: () => {
-			utils.contacts.list.invalidate()
-			navigate('/contacts')
-		}
+	const { handleToggleActive, isToggling } = useArchiveActions('contacts', () => {
+		navigate('/contacts')
 	})
 
 	const contact = contactsData?.contacts.find((c) => c.id === contactId)
 
 	if (!contact) return null
-
-	const handleArchive = () => {
-		if (window.confirm('Archive this contact?')) {
-			toast.promise(updateStatusMutation.mutateAsync({ id: contact.id, status: 'inactive' }), {
-				loading: 'Archiving...',
-				success: 'Contact archived',
-				error: 'Could not archive'
-			})
-		}
-	}
 
 	return (
 		<Paper h='100%' withBorder style={{ overflow: 'hidden' }}>
@@ -70,10 +56,14 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 							bg='gray.1'
 							c='dimmed'
 							leftSection={<Archive size={16} />}
-							onClick={handleArchive}
-							disabled={updateStatusMutation.isPending}
+							onClick={() => {
+								if (window.confirm('Move this contact to archive?')) {
+									handleToggleActive(contact.id, true)
+								}
+							}}
+							disabled={isToggling}
 						>
-							Mark as Inactive
+							Archive
 						</Button>
 					</Group>
 				</Group>
@@ -86,7 +76,6 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 							</Text>
 							<Text size='lg'>{contact.name}</Text>
 						</div>
-
 						<div>
 							<Text size='sm' c='dimmed'>
 								Phone
@@ -95,7 +84,6 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 								{contact.phone}
 							</Text>
 						</div>
-
 						<div>
 							<Text size='sm' c='dimmed'>
 								Created
