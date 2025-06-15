@@ -12,6 +12,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
 import { Archive, Contact, LayoutDashboard, Logs, ScanBarcode } from 'lucide-react'
+import React from 'react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 
@@ -33,33 +34,68 @@ const trpcClient = trpc.createClient({
 	]
 })
 
+// Route configuration
+const routeConfig = [
+	{
+		path: '/',
+		label: 'Dashboard',
+		icon: LayoutDashboard,
+		element: <DashboardPage />
+	},
+	{
+		path: '/items',
+		label: 'Items',
+		singular: 'Item',
+		icon: ScanBarcode,
+		element: <ItemsPage />,
+		subroutes: [
+			{ path: '/items/new', element: <ItemFormPage mode='create' /> },
+			{ path: '/items/edit/:id', element: <ItemFormPage mode='edit' /> }
+		]
+	},
+	{
+		path: '/contacts',
+		label: 'Contacts',
+		singular: 'Contact',
+		icon: Contact,
+		element: <ContactsPage />,
+		subroutes: [
+			{ path: '/contacts/new', element: <ContactFormPage mode='create' /> },
+			{ path: '/contacts/edit/:id', element: <ContactFormPage mode='edit' /> }
+		]
+	},
+	{
+		path: '/archive',
+		label: 'Archive',
+		icon: Archive,
+		element: <ArchivePage />
+	}
+]
+
 function App() {
 	const [opened, { toggle }] = useDisclosure()
 	const location = useLocation()
 
-	const navigation = [
-		{ label: 'Dashboard', icon: LayoutDashboard, href: '/' },
-		{ label: 'Items', icon: ScanBarcode, href: '/items' },
-		{ label: 'Contacts', icon: Contact, href: '/contacts' },
-		{ label: 'Archive', icon: Archive, href: '/archive' }
-	]
-
 	// Get current page title
-	let currentPage =
-		navigation.find((item) => item.href === location.pathname) ||
-		(location.pathname.startsWith('/contacts/')
-			? { label: 'Contacts' }
-			: location.pathname.startsWith('/items/')
-				? { label: 'Items' }
-				: { label: 'Dashboard' })
-
-	// Add prefix for new/edit routes
-	if (location.pathname.endsWith('/new')) {
-		const singularLabel = currentPage.label.replace('Contacts', 'Contact').replace('Items', 'Item')
-		currentPage = { ...currentPage, label: `New ${singularLabel}` }
-	} else if (location.pathname.includes('/edit/')) {
-		const singularLabel = currentPage.label.replace('Contacts', 'Contact').replace('Items', 'Item')
-		currentPage = { ...currentPage, label: `Edit ${singularLabel}` }
+	const getPageTitle = () => {
+		const path = location.pathname
+		
+		// Find matching route
+		const route = routeConfig.find(r => 
+			path === r.path || path.startsWith(`${r.path}/`)
+		)
+		
+		if (!route) return 'Dashboard'
+		
+		// Handle subroutes
+		if (path.endsWith('/new')) {
+			return `New ${route.singular || route.label.slice(0, -1)}`
+		}
+		if (path.includes('/edit/')) {
+			return `Edit ${route.singular || route.label.slice(0, -1)}`
+		}
+		
+		return route.label
 	}
 
 	return (
@@ -83,7 +119,7 @@ function App() {
 									<Logs size='xl' />
 								</ActionIcon>
 								<Title order={3} fw={600}>
-									{currentPage.label}
+									{getPageTitle()}
 								</Title>
 							</Group>
 							<Group visibleFrom='lg'>
@@ -98,14 +134,14 @@ function App() {
 					</AppShell.Header>
 					<AppShell.Navbar bg='dark.9'>
 						<AppShell.Section grow p='md' mt={20} component={ScrollArea} type='never'>
-							{navigation.map((item) => (
+							{routeConfig.map((item) => (
 								<NavLink
-									key={item.href}
+									key={item.path}
 									component={Link}
-									to={item.href}
+									to={item.path}
 									label={item.label}
 									leftSection={<item.icon size={20} />}
-									active={item.href === '/' ? location.pathname === '/' : location.pathname.startsWith(item.href)}
+									active={item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)}
 									onClick={toggle}
 								/>
 							))}
@@ -116,14 +152,14 @@ function App() {
 						style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}
 					>
 						<Routes>
-							<Route path='/' element={<DashboardPage />} />
-							<Route path='/items' element={<ItemsPage />} />
-							<Route path='/items/new' element={<ItemFormPage mode='create' />} />
-							<Route path='/items/edit/:id' element={<ItemFormPage mode='edit' />} />
-							<Route path='/contacts' element={<ContactsPage />} />
-							<Route path='/contacts/new' element={<ContactFormPage mode='create' />} />
-							<Route path='/contacts/edit/:id' element={<ContactFormPage mode='edit' />} />
-							<Route path='/archive' element={<ArchivePage />} />
+							{routeConfig.map((route) => (
+								<React.Fragment key={route.path}>
+									<Route path={route.path} element={route.element} />
+									{route.subroutes?.map((subroute) => (
+										<Route key={subroute.path} path={subroute.path} element={subroute.element} />
+									))}
+								</React.Fragment>
+							))}
 						</Routes>
 					</AppShell.Main>
 				</AppShell>
