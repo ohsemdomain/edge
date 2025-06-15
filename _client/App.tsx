@@ -1,7 +1,7 @@
 import {
 	ActionIcon,
-	AppShell,
 	Button,
+	AppShell,
 	Group,
 	NavLink,
 	ScrollArea,
@@ -11,9 +11,9 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { Archive, Contact, LayoutDashboard, Logs, MoveLeft, ScanBarcode } from 'lucide-react'
+import { Archive, Contact, LayoutDashboard, Logs, ScanBarcode } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
-import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 
 import { ArchivePage } from './features/archive/ArchivePage'
 import { ContactFormPage } from './features/contacts/ContactFormPage'
@@ -36,7 +36,6 @@ const trpcClient = trpc.createClient({
 function App() {
 	const [opened, { toggle }] = useDisclosure()
 	const location = useLocation()
-	const navigate = useNavigate()
 
 	const navigation = [
 		{ label: 'Dashboard', icon: LayoutDashboard, href: '/' },
@@ -55,19 +54,12 @@ function App() {
 				: { label: 'Dashboard' })
 
 	// Add prefix for new/edit routes
-	const isFormPage = location.pathname.endsWith('/new') || location.pathname.includes('/edit/')
 	if (location.pathname.endsWith('/new')) {
 		const singularLabel = currentPage.label.replace('Contacts', 'Contact').replace('Items', 'Item')
 		currentPage = { ...currentPage, label: `New ${singularLabel}` }
 	} else if (location.pathname.includes('/edit/')) {
 		const singularLabel = currentPage.label.replace('Contacts', 'Contact').replace('Items', 'Item')
 		currentPage = { ...currentPage, label: `Edit ${singularLabel}` }
-	}
-
-	// Get base path for back navigation
-	const getBasePath = () => {
-		const pathParts = location.pathname.split('/')
-		return `/${pathParts[1]}`
 	}
 
 	return (
@@ -90,14 +82,6 @@ function App() {
 								>
 									<Logs size='xl' />
 								</ActionIcon>
-								{isFormPage && (
-									<Button
-										leftSection={<MoveLeft size={16} />}
-										onClick={() => navigate(getBasePath())}
-									>
-										Back
-									</Button>
-								)}
 								<Title order={3} fw={600}>
 									{currentPage.label}
 								</Title>
