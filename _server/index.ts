@@ -3,6 +3,7 @@ import type { D1Database, KVNamespace, R2Bucket } from '@cloudflare/workers-type
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { contactsRouter } from './routes/contacts'
 import { itemsRouter } from './routes/items'
+import { invoicesRouter } from './routes/invoices'
 import { createContext, router } from './trpc'
 
 // Define Env interface here where it's used
@@ -15,7 +16,8 @@ export interface Env {
 // Combine all routers
 export const appRouter = router({
 	items: itemsRouter,
-	contacts: contactsRouter
+	contacts: contactsRouter,
+	invoices: invoicesRouter
 })
 
 export type AppRouter = typeof appRouter

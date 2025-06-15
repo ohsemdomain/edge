@@ -55,6 +55,7 @@ export const contactsRouter = router({
 			return {
 				contacts: results.map((r) => ({
 					id: r.id,
+					name: r.company_name, // Add name field for invoices
 					company_name: r.company_name,
 					person_incharge: r.person_incharge,
 					primary_phone: r.primary_phone,
@@ -76,7 +77,7 @@ export const contactsRouter = router({
 				company_name: z.string().min(1),
 				person_incharge: z.string().min(1),
 				primary_phone: z.string().min(1),
-				email: z.string().email().optional(),
+				email: z.string().email().optional().or(z.literal('')),
 				phone_alt_1: z.string().optional(),
 				phone_alt_2: z.string().optional(),
 				phone_alt_3: z.string().optional(),
@@ -132,7 +133,7 @@ export const contactsRouter = router({
 				company_name: z.string().min(1),
 				person_incharge: z.string().min(1),
 				primary_phone: z.string().min(1),
-				email: z.string().email().optional(),
+				email: z.string().email().optional().or(z.literal('')),
 				phone_alt_1: z.string().optional(),
 				phone_alt_2: z.string().optional(),
 				phone_alt_3: z.string().optional(),

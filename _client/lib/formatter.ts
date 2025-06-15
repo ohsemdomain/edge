@@ -50,3 +50,16 @@ export const formatTime = (timestamp: number): string => {
 
 	return `${formattedHours}:${minutes}${ampm}`
 }
+
+/**
+ * Format Date object to custom date format for display
+ * @param date Date object
+ * @returns Formatted date string like "12.06.2025"
+ */
+export const formatDateForDisplay = (date: Date): string => {
+	const day = date.getDate().toString().padStart(2, '0')
+	const month = (date.getMonth() + 1).toString().padStart(2, '0')
+	const year = date.getFullYear()
+
+	return `${day}.${month}.${year}`
+}

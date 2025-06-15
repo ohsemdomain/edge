@@ -11,7 +11,7 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { Archive, Contact, LayoutDashboard, Logs, ScanBarcode } from 'lucide-react'
+import { Archive, Contact, FileText, LayoutDashboard, Logs, ScanBarcode } from 'lucide-react'
 import React from 'react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
@@ -20,6 +20,8 @@ import { ArchivePage } from './features/archive/ArchivePage'
 import { ContactFormPage } from './features/contacts/ContactFormPage'
 import { ContactsPage } from './features/contacts/ContactsPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
+import { InvoiceFormPage } from './features/invoices/InvoiceFormPage'
+import { InvoicesPage } from './features/invoices/InvoicesPage'
 import { ItemFormPage } from './features/items/ItemFormPage'
 import { ItemsPage } from './features/items/ItemsPage'
 
@@ -62,6 +64,17 @@ const routeConfig = [
 		subroutes: [
 			{ path: '/contacts/new', element: <ContactFormPage mode='create' /> },
 			{ path: '/contacts/edit/:id', element: <ContactFormPage mode='edit' /> }
+		]
+	},
+	{
+		path: '/invoices',
+		label: 'Invoices',
+		singular: 'Invoice',
+		icon: FileText,
+		element: <InvoicesPage />,
+		subroutes: [
+			{ path: '/invoices/new', element: <InvoiceFormPage mode='create' /> },
+			{ path: '/invoices/edit/:id', element: <InvoiceFormPage mode='edit' /> }
 		]
 	},
 	{
