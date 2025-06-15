@@ -2,7 +2,7 @@ import { Box, Button, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
-import { trpc } from '~c/utils/trpc'
+import { trpc } from '~c/trpc'
 
 interface ContactFormPageProps {
 	mode: 'create' | 'edit'

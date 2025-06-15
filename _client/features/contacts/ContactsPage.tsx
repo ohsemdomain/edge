@@ -2,7 +2,7 @@ import { Drawer, Grid } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { trpc } from '~c/utils/trpc'
+import { trpc } from '~c/trpc'
 import { ContactDetail } from './ContactDetail'
 import { ContactsList } from './ContactsList'
 

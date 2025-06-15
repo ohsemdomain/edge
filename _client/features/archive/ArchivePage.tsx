@@ -1,6 +1,6 @@
 // _client/features/archive/ArchivePage.tsx
 import { Badge, Box, Flex, Group, Tabs, Text } from '@mantine/core'
-import { trpc } from '~c/utils/trpc'
+import { trpc } from '~c/trpc'
 import { GenericArchive } from './GenericArchive'
 
 interface ArchiveConfigItem {

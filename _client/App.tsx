@@ -23,7 +23,7 @@ import { DashboardPage } from './features/dashboard/DashboardPage'
 import { ItemFormPage } from './features/items/ItemFormPage'
 import { ItemsPage } from './features/items/ItemsPage'
 
-import { trpc } from './utils/trpc'
+import { trpc } from './trpc'
 
 const queryClient = new QueryClient()
 const trpcClient = trpc.createClient({

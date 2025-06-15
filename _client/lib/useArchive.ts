@@ -1,5 +1,5 @@
 // _client/hooks/useArchive.ts
-import { trpc } from '~c/utils/trpc'
+import { trpc } from '~c/trpc'
 import toast from 'react-hot-toast'
 
 export function useArchiveActions(

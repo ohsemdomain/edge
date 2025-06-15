@@ -11,7 +11,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { Plus, Search } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { trpc } from '~c/utils/trpc'
+import { trpc } from '~c/trpc'
 
 interface ContactsListProps {
 	selectedId: string

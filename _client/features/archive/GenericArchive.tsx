@@ -3,8 +3,8 @@ import { Card, Group, ScrollArea, Stack, TextInput } from '@mantine/core'
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { ArchiveActions } from '~c/components/ArchiveActions'
-import { useArchiveActions } from '~c/hooks/useArchive'
-import { trpc } from '~c/utils/trpc'
+import { useArchiveActions } from '~c/lib/useArchive'
+import { trpc } from '~c/trpc'
 
 interface GenericArchiveProps {
 	feature: 'items' | 'contacts'
