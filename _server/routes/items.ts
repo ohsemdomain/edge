@@ -7,6 +7,7 @@ interface ItemRow {
 	id: string
 	name: string
 	description: string
+	unit_price: number
 	is_active: boolean
 	created_at: number
 }
@@ -34,8 +35,8 @@ export const itemsRouter = router({
 			const params: (string | number | boolean)[] = [isActive]
 
 			if (search) {
-				query += ' AND (name LIKE ? OR description LIKE ?)'
-				params.push(`%${search}%`, `%${search}%`)
+				query += ' AND name LIKE ?'
+				params.push(`%${search}%`)
 			}
 
 			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
@@ -55,20 +56,25 @@ export const itemsRouter = router({
 		}),
 
 	create: publicProcedure
-		.input(z.object({ name: z.string().min(1), description: z.string().min(1) }))
+		.input(z.object({ 
+			name: z.string().min(1), 
+			description: z.string().min(1),
+			unit_price: z.number().positive()
+		}))
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
 			const id = crypto.randomUUID().slice(0, 8)
 			const createdAt = Math.floor(Date.now() / 1000)
 
-			await DB.prepare('INSERT INTO items (id, name, description, is_active, created_at) VALUES (?, ?, ?, ?, ?)')
-				.bind(id, input.name, input.description, true, createdAt)
+			await DB.prepare('INSERT INTO items (id, name, description, unit_price, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+				.bind(id, input.name, input.description, input.unit_price, true, createdAt)
 				.run()
 
 			return {
 				id,
 				name: input.name,
 				description: input.description,
+				unit_price: input.unit_price,
 				is_active: true,
 				createdAt: new Date(createdAt * 1000)
 			}
@@ -79,13 +85,14 @@ export const itemsRouter = router({
 			z.object({
 				id: z.string(),
 				name: z.string().min(1),
-				description: z.string().min(1)
+				description: z.string().min(1),
+				unit_price: z.number().positive()
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
 
-			await DB.prepare('UPDATE items SET name = ?, description = ? WHERE id = ?').bind(input.name, input.description, input.id).run()
+			await DB.prepare('UPDATE items SET name = ?, description = ?, unit_price = ? WHERE id = ?').bind(input.name, input.description, input.unit_price, input.id).run()
 
 			return { success: true }
 		})

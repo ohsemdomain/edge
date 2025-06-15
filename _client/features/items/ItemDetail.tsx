@@ -86,6 +86,13 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 
 						<div>
 							<Text size='sm' c='dimmed'>
+								Unit Price
+							</Text>
+							<Text size='lg'>${item.unit_price.toFixed(2)}</Text>
+						</div>
+
+						<div>
+							<Text size='sm' c='dimmed'>
 								ID
 							</Text>
 							<Text size='lg' className='geist'>

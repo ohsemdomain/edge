@@ -47,7 +47,9 @@ export function ArchivePage() {
 			renderItem: (item) => (
 				<>
 					<Text fw={500}>{item.name}</Text>
-					<Text size='sm' c='dimmed'>{item.description}</Text>
+					<Text size='sm' c='dimmed'>
+						${item.unit_price.toFixed(2)}
+					</Text>
 					<Text size='sm' c='dimmed' className='geist'>
 						ID: {item.id.slice(0, 8)}...
 					</Text>

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS items (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT NOT NULL,
+  unit_price REAL NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at INTEGER NOT NULL
 );

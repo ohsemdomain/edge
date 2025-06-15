@@ -1,5 +1,5 @@
 //_client/features/items/ItemFormPage.tsx
-import { Box, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Box, Button, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -12,7 +12,7 @@ interface ItemFormPageProps {
 export function ItemFormPage({ mode }: ItemFormPageProps) {
 	const navigate = useNavigate()
 	const { id: itemId } = useParams()
-	const [formData, setFormData] = useState({ name: '', description: '' })
+	const [formData, setFormData] = useState({ name: '', description: '', unit_price: 0 })
 	const utils = trpc.useUtils()
 
 	// Use cached data from ItemsList query for edit mode
@@ -25,7 +25,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 		if (mode === 'edit' && itemId && itemsData) {
 			const item = itemsData.items.find((i) => i.id === itemId)
 			if (item) {
-				setFormData({ name: item.name, description: item.description })
+				setFormData({ name: item.name, description: item.description, unit_price: item.unit_price })
 			}
 		}
 	}, [mode, itemId, itemsData])
@@ -61,7 +61,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	}
 
 	const isLoading = createMutation.isPending || updateMutation.isPending
-	const canSubmit = formData.name && formData.description && !isLoading
+	const canSubmit = formData.name && formData.description && formData.unit_price > 0 && !isLoading
 
 	return (
 		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
@@ -84,6 +84,16 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 							placeholder='Enter item description'
 							value={formData.description}
 							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+							required
+						/>
+						<NumberInput
+							label='Unit Price'
+							placeholder='Enter unit price'
+							value={formData.unit_price}
+							onChange={(value) => setFormData({ ...formData, unit_price: typeof value === 'number' ? value : 0 })}
+							min={0}
+							decimalScale={2}
+							fixedDecimalScale
 							required
 						/>
 					</Stack>
