@@ -78,10 +78,10 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 						</div>
 						<div>
 							<Text size='sm' c='dimmed'>
-								Contact Type
+								Type
 							</Text>
 							<Text size='lg' className='geist'>
-								{contact.contact_type}
+								{contact.is_supplier ? 'Supplier' : 'Client'}
 							</Text>
 						</div>
 						<div>

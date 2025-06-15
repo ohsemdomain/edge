@@ -6,7 +6,7 @@ import { publicProcedure, router } from '../trpc'
 interface ContactRow {
 	id: string
 	legal_name: string
-	contact_type: string
+	is_supplier: boolean
 	is_active: boolean
 	created_at: number
 }
@@ -49,7 +49,7 @@ export const contactsRouter = router({
 				contacts: results.map((r) => ({
 					id: r.id,
 					legal_name: r.legal_name,
-					contact_type: r.contact_type,
+					is_supplier: r.is_supplier,
 					is_active: r.is_active,
 					createdAt: new Date(r.created_at * 1000)
 				})),
@@ -61,7 +61,7 @@ export const contactsRouter = router({
 		.input(
 			z.object({
 				legal_name: z.string().min(1),
-				contact_type: z.string().default('client')
+				is_supplier: z.boolean().default(false)
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -70,15 +70,15 @@ export const contactsRouter = router({
 			const createdAt = Math.floor(Date.now() / 1000)
 
 			await DB.prepare(
-				'INSERT INTO contacts (id, legal_name, contact_type, is_active, created_at) VALUES (?, ?, ?, ?, ?)'
+				'INSERT INTO contacts (id, legal_name, is_supplier, is_active, created_at) VALUES (?, ?, ?, ?, ?)'
 			)
-				.bind(id, input.legal_name, input.contact_type, true, createdAt)
+				.bind(id, input.legal_name, input.is_supplier, true, createdAt)
 				.run()
 
 			return {
 				id,
 				legal_name: input.legal_name,
-				contact_type: input.contact_type,
+				is_supplier: input.is_supplier,
 				is_active: true,
 				createdAt: new Date(createdAt * 1000)
 			}
@@ -89,14 +89,14 @@ export const contactsRouter = router({
 			z.object({
 				id: z.string(),
 				legal_name: z.string().min(1),
-				contact_type: z.string().min(1)
+				is_supplier: z.boolean()
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
 
-			await DB.prepare('UPDATE contacts SET legal_name = ?, contact_type = ? WHERE id = ?')
-				.bind(input.legal_name, input.contact_type, input.id)
+			await DB.prepare('UPDATE contacts SET legal_name = ?, is_supplier = ? WHERE id = ?')
+				.bind(input.legal_name, input.is_supplier, input.id)
 				.run()
 
 			return { success: true }

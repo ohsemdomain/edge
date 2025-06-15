@@ -1,4 +1,4 @@
-import { Box, Button, Group, Stack, Text, TextInput } from '@mantine/core'
+import { Box, Button, Group, Stack, Switch, Text, TextInput } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -11,7 +11,7 @@ interface ContactFormPageProps {
 export function ContactFormPage({ mode }: ContactFormPageProps) {
 	const navigate = useNavigate()
 	const { id: contactId } = useParams()
-	const [formData, setFormData] = useState({ legal_name: '', contact_type: 'client' })
+	const [formData, setFormData] = useState({ legal_name: '', is_supplier: false })
 	const utils = trpc.useUtils()
 
 	// Use cached data from ContactsList query for edit mode
@@ -24,7 +24,7 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 		if (mode === 'edit' && contactId && contactsData) {
 			const contact = contactsData.contacts.find((c) => c.id === contactId)
 			if (contact) {
-				setFormData({ legal_name: contact.legal_name, contact_type: contact.contact_type })
+				setFormData({ legal_name: contact.legal_name, is_supplier: contact.is_supplier })
 			}
 		}
 	}, [mode, contactId, contactsData])
@@ -60,7 +60,7 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 	}
 
 	const isLoading = createMutation.isPending || updateMutation.isPending
-	const canSubmit = formData.legal_name && formData.contact_type && !isLoading
+	const canSubmit = formData.legal_name && !isLoading
 
 	return (
 		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
@@ -79,12 +79,11 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 							required
 						/>
 
-						<TextInput
-							label='Contact Type'
-							placeholder='Enter contact type (client, supplier, employee)'
-							value={formData.contact_type}
-							onChange={(e) => setFormData({ ...formData, contact_type: e.target.value })}
-							required
+						<Switch
+							label='Is Supplier'
+							description='Toggle on for Supplier, off for Client'
+							checked={formData.is_supplier}
+							onChange={(e) => setFormData({ ...formData, is_supplier: e.currentTarget.checked })}
 						/>
 					</Stack>
 					<Group mt='xl'>

@@ -35,8 +35,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 	// Client-side filter
 	const filteredContacts = search
 		? data?.contacts?.filter((contact) =>
-				contact.legal_name.toLowerCase().includes(search.toLowerCase()) ||
-				contact.contact_type.toLowerCase().includes(search.toLowerCase())
+				contact.legal_name.toLowerCase().includes(search.toLowerCase())
 		  ) || []
 		: data?.contacts || []
 
@@ -133,7 +132,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 								>
 									<Text fw={500}>{contact.legal_name}</Text>
 									<Text className='geist' size='sm' c='dimmed'>
-										{contact.contact_type}
+										{contact.is_supplier ? 'Supplier' : 'Client'}
 									</Text>
 								</Card>
 							</div>

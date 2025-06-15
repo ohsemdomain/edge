@@ -35,7 +35,7 @@ export function ArchivePage() {
 				<>
 					<Text fw={500}>{item.legal_name}</Text>
 					<Text size='sm' c='dimmed'>
-						{item.contact_type}
+						{item.is_supplier ? 'Supplier' : 'Client'}
 					</Text>
 				</>
 			)
