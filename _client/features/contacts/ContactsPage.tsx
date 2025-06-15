@@ -32,7 +32,7 @@ export function ContactsPage() {
 		const params = new URLSearchParams(searchParams)
 		params.set('id', id)
 		setSearchParams(params)
-		
+
 		// Open drawer on mobile when selecting a contact
 		if (window.innerWidth < 1024) {
 			openDrawer()
@@ -42,7 +42,7 @@ export function ContactsPage() {
 	return (
 		<>
 			<Grid gutter='md' p='md' style={{ height: '100%', display: 'flex' }}>
-			<Grid.Col h='100%' span={{ base: 12, lg: 4 }}>
+				<Grid.Col h='100%' span={{ base: 12, lg: 4 }}>
 					<ContactsList selectedId={selectedId} onSelect={handleSelectContact} />
 				</Grid.Col>
 

@@ -2,8 +2,8 @@
 import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useArchiveActions } from '~c/lib/useArchive'
 import { formatDate } from '~c/lib/formatter'
+import { useArchiveActions } from '~c/lib/useArchive'
 import { trpc } from '~c/trpc'
 
 interface ContactDetailProps {
@@ -18,6 +18,10 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 		page: 1,
 		limit: 1000,
 		isActive: true
+	})
+
+	const { data: addresses } = trpc.contacts.getAddresses.useQuery({
+		contactId
 	})
 
 	const { handleToggleActive, isToggling } = useArchiveActions('contacts', () => {
@@ -143,6 +147,48 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 								{contact.is_supplier ? 'Supplier' : 'Client'}
 							</Text>
 						</div>
+
+						{/* Addresses Section */}
+						{addresses && addresses.length > 0 && (
+							<>
+								<Text fw={600} size='lg' mt='md'>
+									Addresses
+								</Text>
+								{addresses.map((addr: any, index: number) => (
+									<Paper key={addr.id} p='md' withBorder>
+										<Stack gap='xs'>
+											<Group justify='space-between'>
+												<Text fw={500}>Address {index + 1}</Text>
+												<Group gap='xs'>
+													{addr.is_default_billing && (
+														<Text size='sm' c='blue'>
+															Default Billing
+														</Text>
+													)}
+													{addr.is_default_shipping && (
+														<Text size='sm' c='green'>
+															Default Shipping
+														</Text>
+													)}
+												</Group>
+											</Group>
+
+											<Text size='sm'>{addr.receiver}</Text>
+											<Text size='sm'>{addr.address_line1}</Text>
+											{addr.address_line2 && <Text size='sm'>{addr.address_line2}</Text>}
+											{addr.address_line3 && <Text size='sm'>{addr.address_line3}</Text>}
+											{addr.address_line4 && <Text size='sm'>{addr.address_line4}</Text>}
+											<Text size='sm'>
+												{addr.postcode} {addr.city}
+											</Text>
+											<Text size='sm'>
+												{addr.state}, {addr.country}
+											</Text>
+										</Stack>
+									</Paper>
+								))}
+							</>
+						)}
 
 						<div>
 							<Text size='sm' c='dimmed'>

@@ -40,7 +40,8 @@ export const contactsRouter = router({
 			const params: (string | number | boolean)[] = [isActive]
 
 			if (search) {
-				query += ' AND (company_name LIKE ? OR primary_phone LIKE ? OR phone_alt_1 LIKE ? OR phone_alt_2 LIKE ? OR phone_alt_3 LIKE ?)'
+				query +=
+					' AND (company_name LIKE ? OR primary_phone LIKE ? OR phone_alt_1 LIKE ? OR phone_alt_2 LIKE ? OR phone_alt_3 LIKE ?)'
 				params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`)
 			}
 
@@ -94,7 +95,19 @@ export const contactsRouter = router({
 			await DB.prepare(
 				'INSERT INTO contacts (id, company_name, person_incharge, primary_phone, email, phone_alt_1, phone_alt_2, phone_alt_3, is_supplier, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 			)
-				.bind(id, input.company_name, input.person_incharge, input.primary_phone, input.email || null, input.phone_alt_1 || null, input.phone_alt_2 || null, input.phone_alt_3 || null, input.is_supplier, true, createdAt)
+				.bind(
+					id,
+					input.company_name,
+					input.person_incharge,
+					input.primary_phone,
+					input.email || null,
+					input.phone_alt_1 || null,
+					input.phone_alt_2 || null,
+					input.phone_alt_3 || null,
+					input.is_supplier,
+					true,
+					createdAt
+				)
 				.run()
 
 			return {
@@ -129,10 +142,176 @@ export const contactsRouter = router({
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
 
-			await DB.prepare('UPDATE contacts SET company_name = ?, person_incharge = ?, primary_phone = ?, email = ?, phone_alt_1 = ?, phone_alt_2 = ?, phone_alt_3 = ?, is_supplier = ? WHERE id = ?')
-				.bind(input.company_name, input.person_incharge, input.primary_phone, input.email || null, input.phone_alt_1 || null, input.phone_alt_2 || null, input.phone_alt_3 || null, input.is_supplier, input.id)
+			await DB.prepare(
+				'UPDATE contacts SET company_name = ?, person_incharge = ?, primary_phone = ?, email = ?, phone_alt_1 = ?, phone_alt_2 = ?, phone_alt_3 = ?, is_supplier = ? WHERE id = ?'
+			)
+				.bind(
+					input.company_name,
+					input.person_incharge,
+					input.primary_phone,
+					input.email || null,
+					input.phone_alt_1 || null,
+					input.phone_alt_2 || null,
+					input.phone_alt_3 || null,
+					input.is_supplier,
+					input.id
+				)
 				.run()
 
 			return { success: true }
-		})
+		}),
+
+	// Address methods
+
+	getAddresses: publicProcedure
+		.input(z.object({ contactId: z.string() }))
+		.query(async ({ input, ctx }) => {
+			const { DB } = ctx.env
+
+			const { results } = await DB.prepare(
+				'SELECT * FROM contact_addresses WHERE contact_id = ? ORDER BY created_at DESC'
+			)
+				.bind(input.contactId)
+				.all()
+
+			return results
+		}),
+
+	addAddress: publicProcedure
+		.input(
+			z.object({
+				contactId: z.string(),
+				receiver: z.string().min(1),
+				address_line1: z.string().min(1),
+				address_line2: z.string().optional(),
+				address_line3: z.string().optional(),
+				address_line4: z.string().optional(),
+				postcode: z.string().min(1),
+				city: z.string().min(1),
+				state: z.string().min(1),
+				country: z.string().min(1),
+				is_default_billing: z.boolean().default(false),
+				is_default_shipping: z.boolean().default(false)
+			})
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { DB } = ctx.env
+			const id = crypto.randomUUID().slice(0, 8)
+			const createdAt = Math.floor(Date.now() / 1000)
+
+			// If setting as default, unset other defaults first
+			if (input.is_default_billing) {
+				await DB.prepare(
+					'UPDATE contact_addresses SET is_default_billing = FALSE WHERE contact_id = ?'
+				)
+					.bind(input.contactId)
+					.run()
+			}
+
+			if (input.is_default_shipping) {
+				await DB.prepare(
+					'UPDATE contact_addresses SET is_default_shipping = FALSE WHERE contact_id = ?'
+				)
+					.bind(input.contactId)
+					.run()
+			}
+
+			await DB.prepare(
+				`INSERT INTO contact_addresses (
+	  id, contact_id, receiver, address_line1, address_line2, 
+	  address_line3, address_line4, postcode, city, state, 
+	  country, is_default_billing, is_default_shipping, created_at
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			)
+				.bind(
+					id,
+					input.contactId,
+					input.receiver,
+					input.address_line1,
+					input.address_line2 || null,
+					input.address_line3 || null,
+					input.address_line4 || null,
+					input.postcode,
+					input.city,
+					input.state,
+					input.country,
+					input.is_default_billing,
+					input.is_default_shipping,
+					createdAt
+				)
+				.run()
+
+			return { id, ...input, created_at: createdAt }
+		}),
+
+	updateAddress: publicProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				contactId: z.string(),
+				receiver: z.string().min(1),
+				address_line1: z.string().min(1),
+				address_line2: z.string().optional(),
+				address_line3: z.string().optional(),
+				address_line4: z.string().optional(),
+				postcode: z.string().min(1),
+				city: z.string().min(1),
+				state: z.string().min(1),
+				country: z.string().min(1),
+				is_default_billing: z.boolean(),
+				is_default_shipping: z.boolean()
+			})
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { DB } = ctx.env
+
+			// Handle default toggles
+			if (input.is_default_billing) {
+				await DB.prepare(
+					'UPDATE contact_addresses SET is_default_billing = FALSE WHERE contact_id = ? AND id != ?'
+				)
+					.bind(input.contactId, input.id)
+					.run()
+			}
+
+			if (input.is_default_shipping) {
+				await DB.prepare(
+					'UPDATE contact_addresses SET is_default_shipping = FALSE WHERE contact_id = ? AND id != ?'
+				)
+					.bind(input.contactId, input.id)
+					.run()
+			}
+
+			await DB.prepare(
+				`UPDATE contact_addresses SET 
+	  receiver = ?, address_line1 = ?, address_line2 = ?, 
+	  address_line3 = ?, address_line4 = ?, postcode = ?, 
+	  city = ?, state = ?, country = ?, 
+	  is_default_billing = ?, is_default_shipping = ?
+	WHERE id = ?`
+			)
+				.bind(
+					input.receiver,
+					input.address_line1,
+					input.address_line2 || null,
+					input.address_line3 || null,
+					input.address_line4 || null,
+					input.postcode,
+					input.city,
+					input.state,
+					input.country,
+					input.is_default_billing,
+					input.is_default_shipping,
+					input.id
+				)
+				.run()
+
+			return { success: true }
+		}),
+
+	deleteAddress: publicProcedure.input(z.string()).mutation(async ({ input: id, ctx }) => {
+		const { DB } = ctx.env
+		await DB.prepare('DELETE FROM contact_addresses WHERE id = ?').bind(id).run()
+		return { success: true }
+	})
 })

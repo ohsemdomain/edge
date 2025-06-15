@@ -27,9 +27,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 
 	// Client-side filter
 	const filteredItems = search
-		? data?.items?.filter((item) => 
-				item.name.toLowerCase().includes(search.toLowerCase())
-			) || []
+		? data?.items?.filter((item) => item.name.toLowerCase().includes(search.toLowerCase())) || []
 		: data?.items || []
 
 	// Virtual scrolling
@@ -85,9 +83,9 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 					width: '100%',
 					overflow: 'auto',
 					scrollbarWidth: 'none', // Firefox
-					msOverflowStyle: 'none', // IE and Edge
+					msOverflowStyle: 'none' // IE and Edge
 				}}
-				className="hide-scrollbar"
+				className='hide-scrollbar'
 			>
 				<div
 					style={{
@@ -123,7 +121,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 										borderColor: selectedId === item.id ? 'var(--mantine-color-gray-4)' : undefined
 									}}
 								>
-									<Group justify="space-between" align="start">
+									<Group justify='space-between' align='start'>
 										<Text fw={500}>{item.name}</Text>
 										<Text size='sm' fw={500}>
 											${item.unit_price.toFixed(2)}

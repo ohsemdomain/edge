@@ -1,12 +1,4 @@
-import {
-	ActionIcon,
-	Badge,
-	Card,
-	Group,
-	Stack,
-	Text,
-	TextInput
-} from '@mantine/core'
+import { ActionIcon, Badge, Card, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Plus, Search } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -34,13 +26,14 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 
 	// Client-side filter
 	const filteredContacts = search
-		? data?.contacts?.filter((contact) =>
-				contact.company_name.toLowerCase().includes(search.toLowerCase()) ||
-				contact.primary_phone.includes(search) ||
-				(contact.phone_alt_1 && contact.phone_alt_1.includes(search)) ||
-				(contact.phone_alt_2 && contact.phone_alt_2.includes(search)) ||
-				(contact.phone_alt_3 && contact.phone_alt_3.includes(search))
-		  ) || []
+		? data?.contacts?.filter(
+				(contact) =>
+					contact.company_name.toLowerCase().includes(search.toLowerCase()) ||
+					contact.primary_phone.includes(search) ||
+					contact.phone_alt_1?.includes(search) ||
+					contact.phone_alt_2?.includes(search) ||
+					contact.phone_alt_3?.includes(search)
+			) || []
 		: data?.contacts || []
 
 	// Virtual scrolling
@@ -96,9 +89,9 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 					width: '100%',
 					overflow: 'auto',
 					scrollbarWidth: 'none', // Firefox
-					msOverflowStyle: 'none', // IE and Edge
+					msOverflowStyle: 'none' // IE and Edge
 				}}
-				className="hide-scrollbar"
+				className='hide-scrollbar'
 			>
 				<div
 					style={{
@@ -131,10 +124,11 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 										cursor: 'pointer',
 										backgroundColor:
 											selectedId === contact.id ? 'var(--mantine-color-gray-1)' : undefined,
-										borderColor: selectedId === contact.id ? 'var(--mantine-color-gray-4)' : undefined
+										borderColor:
+											selectedId === contact.id ? 'var(--mantine-color-gray-4)' : undefined
 									}}
 								>
-									<Group justify="space-between" align="start">
+									<Group justify='space-between' align='start'>
 										<Text fw={500}>{contact.company_name.toUpperCase()}</Text>
 										<Text size='sm' fw={500}>
 											{contact.is_supplier ? 'Supplier' : 'Client'}

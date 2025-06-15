@@ -1,7 +1,7 @@
 import {
 	ActionIcon,
-	Button,
 	AppShell,
+	Button,
 	Group,
 	NavLink,
 	ScrollArea,
@@ -79,14 +79,12 @@ function App() {
 	// Get current page title
 	const getPageTitle = () => {
 		const path = location.pathname
-		
+
 		// Find matching route
-		const route = routeConfig.find(r => 
-			path === r.path || path.startsWith(`${r.path}/`)
-		)
-		
+		const route = routeConfig.find((r) => path === r.path || path.startsWith(`${r.path}/`))
+
 		if (!route) return 'Dashboard'
-		
+
 		// Handle subroutes
 		if (path.endsWith('/new')) {
 			return `New ${route.singular || route.label.slice(0, -1)}`
@@ -94,7 +92,7 @@ function App() {
 		if (path.includes('/edit/')) {
 			return `Edit ${route.singular || route.label.slice(0, -1)}`
 		}
-		
+
 		return route.label
 	}
 
@@ -141,7 +139,11 @@ function App() {
 									to={item.path}
 									label={item.label}
 									leftSection={<item.icon size={20} />}
-									active={item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)}
+									active={
+										item.path === '/'
+											? location.pathname === '/'
+											: location.pathname.startsWith(item.path)
+									}
 									onClick={toggle}
 								/>
 							))}

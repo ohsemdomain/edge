@@ -51,7 +51,7 @@ export function DashboardPage() {
 				.fill('')
 				.map(() => words[Math.floor(Math.random() * words.length)])
 				.join(' ')
-			text += sentence.charAt(0).toUpperCase() + sentence.slice(1) + '. '
+			text += `${sentence.charAt(0).toUpperCase() + sentence.slice(1)}. `
 		}
 		return text
 	}
@@ -61,7 +61,13 @@ export function DashboardPage() {
 			<Stack p='md'>
 				<Grid>
 					<Grid.Col span={{ base: 12, lg: 6 }}>
-						<Paper withBorder radius='md' p={20} h={300} style={{ display: 'flex', flexDirection: 'column' }}>
+						<Paper
+							withBorder
+							radius='md'
+							p={20}
+							h={300}
+							style={{ display: 'flex', flexDirection: 'column' }}
+						>
 							<Text c='dimmed' size='sm'>
 								Welcome to Edge
 							</Text>
@@ -71,7 +77,13 @@ export function DashboardPage() {
 						</Paper>
 					</Grid.Col>
 					<Grid.Col span={{ base: 12, lg: 6 }}>
-						<Paper withBorder radius='md' p={20} h={300} style={{ display: 'flex', flexDirection: 'column' }}>
+						<Paper
+							withBorder
+							radius='md'
+							p={20}
+							h={300}
+							style={{ display: 'flex', flexDirection: 'column' }}
+						>
 							<Text c='dimmed' size='sm'>
 								Welcome to Edge
 							</Text>

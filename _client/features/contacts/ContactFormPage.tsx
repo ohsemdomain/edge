@@ -1,93 +1,40 @@
-import { Box, Button, Group, ScrollArea, Stack, Switch, Text, TextInput } from '@mantine/core'
-import { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
-import { useNavigate, useParams } from 'react-router-dom'
-import { trpc } from '~c/trpc'
+import {
+	Box,
+	Button,
+	Checkbox,
+	Group,
+	Paper,
+	ScrollArea,
+	Stack,
+	Switch,
+	Text,
+	TextInput
+} from '@mantine/core'
+import { Trash } from 'lucide-react'
+import { useContactForm } from './useContactForm'
 
 interface ContactFormPageProps {
 	mode: 'create' | 'edit'
+	onSuccess?: (contactId: string) => void // For future invoice modal
 }
 
-export function ContactFormPage({ mode }: ContactFormPageProps) {
-	const navigate = useNavigate()
-	const { id: contactId } = useParams()
-	const [formData, setFormData] = useState({
-		company_name: '',
-		person_incharge: '',
-		primary_phone: '',
-		email: '',
-		phone_alt_1: '',
-		phone_alt_2: '',
-		phone_alt_3: '',
-		is_supplier: false
-	})
-	const utils = trpc.useUtils()
-
-	// Use cached data from ContactsList query for edit mode
-	const { data: contactsData } = trpc.contacts.list.useQuery(
-		{ search: '', page: 1, limit: 1000, isActive: true },
-		{ enabled: mode === 'edit' }
-	)
-
-	useEffect(() => {
-		if (mode === 'edit' && contactId && contactsData) {
-			const contact = contactsData.contacts.find((c) => c.id === contactId)
-			if (contact) {
-				setFormData({
-					company_name: contact.company_name,
-					person_incharge: contact.person_incharge,
-					primary_phone: contact.primary_phone,
-					email: contact.email || '',
-					phone_alt_1: contact.phone_alt_1 || '',
-					phone_alt_2: contact.phone_alt_2 || '',
-					phone_alt_3: contact.phone_alt_3 || '',
-					is_supplier: contact.is_supplier
-				})
-			}
-		}
-	}, [mode, contactId, contactsData])
-
-	const createMutation = trpc.contacts.create.useMutation({
-		onSuccess: (data) => {
-			utils.contacts.list.invalidate()
-			navigate(`/contacts?id=${data.id}`)
-		}
-	})
-
-	const updateMutation = trpc.contacts.update.useMutation({
-		onSuccess: () => {
-			utils.contacts.list.invalidate()
-			navigate(`/contacts?id=${contactId}`)
-		}
-	})
-
-	const handleSubmit = () => {
-		if (mode === 'create') {
-			toast.promise(createMutation.mutateAsync(formData), {
-				loading: 'Saving...',
-				success: 'Contact created',
-				error: 'Could not save'
-			})
-		} else if (contactId) {
-			toast.promise(updateMutation.mutateAsync({ id: contactId, ...formData }), {
-				loading: 'Saving...',
-				success: 'Contact updated',
-				error: 'Could not save'
-			})
-		}
-	}
-
-	const isLoading = createMutation.isPending || updateMutation.isPending
-	const canSubmit =
-		formData.company_name && formData.person_incharge && formData.primary_phone && !isLoading
+export function ContactFormPage({ mode, onSuccess }: ContactFormPageProps) {
+	const {
+		formData,
+		setFormData,
+		addresses,
+		updateAddress,
+		addEmptyAddress,
+		removeAddress,
+		handleSubmit,
+		handleCancel,
+		isLoading,
+		canSubmit
+	} = useContactForm(mode, onSuccess)
 
 	return (
 		<ScrollArea h='100%' type='never'>
-			<Box maw={800} w='100%' p='md' mx='auto' style={{ overflow: 'hidden' }}>
-				<Group mt='xl' justify='space-between' align='center'>
-					<Text>Placholder</Text>
-					<Text>Placholder</Text>
-				</Group>
+			<Box maw={800} w='100%' p='md' mx='auto'>
 				<Stack mt='xl'>
 					<Stack gap='md'>
 						<TextInput
@@ -150,11 +97,131 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 							onChange={(e) => setFormData({ ...formData, is_supplier: e.currentTarget.checked })}
 						/>
 					</Stack>
+
+					{/* Addresses */}
+					<Stack mt='xl'>
+						{addresses.map((address, index) => (
+							<Paper key={index} p='md' withBorder>
+								<Group justify='space-between' mb='md'>
+									<Text fw={500}>Address {index + 1}</Text>
+									{addresses.length > 1 && (
+										<Button
+											size='xs'
+											color='red'
+											variant='subtle'
+											leftSection={<Trash size={14} />}
+											onClick={() => removeAddress(index)}
+										>
+											Remove
+										</Button>
+									)}
+								</Group>
+
+								<Stack gap='sm'>
+									<TextInput
+										label='Receiver'
+										placeholder='Enter receiver name'
+										value={address.receiver}
+										onChange={(e) => updateAddress(index, 'receiver', e.target.value)}
+										required
+									/>
+
+									<TextInput
+										label='Address Line 1'
+										placeholder='Enter address line 1'
+										value={address.address_line1}
+										onChange={(e) => updateAddress(index, 'address_line1', e.target.value)}
+										required
+									/>
+
+									<TextInput
+										label='Address Line 2'
+										placeholder='Enter address line 2 (optional)'
+										value={address.address_line2}
+										onChange={(e) => updateAddress(index, 'address_line2', e.target.value)}
+									/>
+
+									<TextInput
+										label='Address Line 3'
+										placeholder='Enter address line 3 (optional)'
+										value={address.address_line3}
+										onChange={(e) => updateAddress(index, 'address_line3', e.target.value)}
+									/>
+
+									<TextInput
+										label='Address Line 4'
+										placeholder='Enter address line 4 (optional)'
+										value={address.address_line4}
+										onChange={(e) => updateAddress(index, 'address_line4', e.target.value)}
+									/>
+
+									<Group grow>
+										<TextInput
+											label='Postcode'
+											placeholder='Enter postcode'
+											value={address.postcode}
+											onChange={(e) => updateAddress(index, 'postcode', e.target.value)}
+											required
+										/>
+
+										<TextInput
+											label='City'
+											placeholder='Enter city'
+											value={address.city}
+											onChange={(e) => updateAddress(index, 'city', e.target.value)}
+											required
+										/>
+									</Group>
+
+									<Group grow>
+										<TextInput
+											label='State'
+											placeholder='Enter state'
+											value={address.state}
+											onChange={(e) => updateAddress(index, 'state', e.target.value)}
+											required
+										/>
+
+										<TextInput
+											label='Country'
+											placeholder='Enter country'
+											value={address.country}
+											onChange={(e) => updateAddress(index, 'country', e.target.value)}
+											required
+										/>
+									</Group>
+
+									<Group>
+										<Checkbox
+											label='Default Billing'
+											checked={address.is_default_billing}
+											onChange={(e) =>
+												updateAddress(index, 'is_default_billing', e.currentTarget.checked)
+											}
+										/>
+
+										<Checkbox
+											label='Default Shipping'
+											checked={address.is_default_shipping}
+											onChange={(e) =>
+												updateAddress(index, 'is_default_shipping', e.currentTarget.checked)
+											}
+										/>
+									</Group>
+								</Stack>
+							</Paper>
+						))}
+
+						<Button variant='light' onClick={addEmptyAddress}>
+							+ Address
+						</Button>
+					</Stack>
+
 					<Group mt='xl'>
 						<Button onClick={handleSubmit} disabled={!canSubmit}>
 							{mode === 'create' ? 'Create' : 'Save'}
 						</Button>
-						<Button variant='subtle' onClick={() => navigate('/contacts')} disabled={isLoading}>
+						<Button variant='subtle' onClick={handleCancel} disabled={isLoading}>
 							Cancel
 						</Button>
 					</Group>

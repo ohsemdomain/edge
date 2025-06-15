@@ -2,8 +2,8 @@
 import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useArchiveActions } from '~c/lib/useArchive'
 import { formatDate } from '~c/lib/formatter'
+import { useArchiveActions } from '~c/lib/useArchive'
 import { trpc } from '~c/trpc'
 
 interface ItemDetailProps {
