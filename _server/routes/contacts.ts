@@ -66,7 +66,11 @@ export const contactsRouter = router({
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
-			const id = `C${Date.now().toString().slice(-7).replace(/0/g, () => Math.floor(Math.random() * 9 + 1).toString())}`
+			const id =
+				`C${Date.now().toString().slice(-1)}${Math.floor(100000 + Math.random() * 900000)}`.replace(
+					/0/g,
+					() => Math.floor(Math.random() * 9 + 1).toString()
+				)
 			const createdAt = Math.floor(Date.now() / 1000)
 
 			await DB.prepare(
