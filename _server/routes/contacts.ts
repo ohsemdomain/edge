@@ -49,8 +49,8 @@ export const contactsRouter = router({
 				contacts: results.map((r) => ({
 					id: r.id,
 					legal_name: r.legal_name,
-					is_supplier: r.is_supplier,
-					is_active: r.is_active,
+					is_supplier: Boolean(r.is_supplier),
+					is_active: Boolean(r.is_active),
 					createdAt: new Date(r.created_at * 1000)
 				})),
 				totalItems: results.length

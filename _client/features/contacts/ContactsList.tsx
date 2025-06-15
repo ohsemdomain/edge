@@ -131,7 +131,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 									}}
 								>
 									<Group justify="space-between" align="start">
-										<Text fw={500}>{contact.legal_name}</Text>
+										<Text fw={500}>{contact.legal_name.toUpperCase()}</Text>
 										<Text size='sm' fw={500}>
 											{contact.is_supplier ? 'Supplier' : 'Client'}
 										</Text>
