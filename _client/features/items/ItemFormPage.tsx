@@ -90,10 +90,12 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 							label='Unit Price'
 							placeholder='Enter unit price'
 							value={formData.unit_price}
-							onChange={(value) => setFormData({ ...formData, unit_price: typeof value === 'number' ? value : 0 })}
+							onChange={(value) =>
+								setFormData({ ...formData, unit_price: typeof value === 'number' ? value : 0 })
+							}
 							min={0}
 							decimalScale={2}
-							fixedDecimalScale
+							hideControls
 							required
 						/>
 					</Stack>
