@@ -137,7 +137,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 										</Text>
 									</Group>
 									<Text className='geist' size='sm' c='dimmed'>
-										ID: {contact.id}
+										{contact.id}
 									</Text>
 								</Card>
 							</div>

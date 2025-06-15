@@ -130,7 +130,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 										</Text>
 									</Group>
 									<Text className='geist' size='sm' c='dimmed'>
-										ID: {item.id}
+										{item.id}
 									</Text>
 								</Card>
 							</div>
