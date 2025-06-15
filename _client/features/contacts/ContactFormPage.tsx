@@ -11,7 +11,7 @@ interface ContactFormPageProps {
 export function ContactFormPage({ mode }: ContactFormPageProps) {
 	const navigate = useNavigate()
 	const { id: contactId } = useParams()
-	const [formData, setFormData] = useState({ name: '', phone: '' })
+	const [formData, setFormData] = useState({ legal_name: '', contact_type: 'client' })
 	const utils = trpc.useUtils()
 
 	// Use cached data from ContactsList query for edit mode
@@ -24,7 +24,7 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 		if (mode === 'edit' && contactId && contactsData) {
 			const contact = contactsData.contacts.find((c) => c.id === contactId)
 			if (contact) {
-				setFormData({ name: contact.name, phone: contact.phone })
+				setFormData({ legal_name: contact.legal_name, contact_type: contact.contact_type })
 			}
 		}
 	}, [mode, contactId, contactsData])
@@ -60,7 +60,7 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 	}
 
 	const isLoading = createMutation.isPending || updateMutation.isPending
-	const canSubmit = formData.name && formData.phone && !isLoading
+	const canSubmit = formData.legal_name && formData.contact_type && !isLoading
 
 	return (
 		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
@@ -72,18 +72,18 @@ export function ContactFormPage({ mode }: ContactFormPageProps) {
 				<Stack mt='xl'>
 					<Stack gap='md'>
 						<TextInput
-							label='Name'
-							placeholder='Enter name'
-							value={formData.name}
-							onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+							label='Legal Name'
+							placeholder='Enter legal name'
+							value={formData.legal_name}
+							onChange={(e) => setFormData({ ...formData, legal_name: e.target.value })}
 							required
 						/>
 
 						<TextInput
-							label='Phone'
-							placeholder='Enter phone number'
-							value={formData.phone}
-							onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+							label='Contact Type'
+							placeholder='Enter contact type (client, supplier, employee)'
+							value={formData.contact_type}
+							onChange={(e) => setFormData({ ...formData, contact_type: e.target.value })}
 							required
 						/>
 					</Stack>

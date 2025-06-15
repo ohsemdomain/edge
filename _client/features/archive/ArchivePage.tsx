@@ -33,9 +33,9 @@ export function ArchivePage() {
 			count: archivedContacts?.totalItems || 0,
 			renderItem: (item) => (
 				<>
-					<Text fw={500}>{item.name}</Text>
+					<Text fw={500}>{item.legal_name}</Text>
 					<Text size='sm' c='dimmed'>
-						{item.phone}
+						{item.contact_type}
 					</Text>
 				</>
 			)
@@ -47,6 +47,7 @@ export function ArchivePage() {
 			renderItem: (item) => (
 				<>
 					<Text fw={500}>{item.name}</Text>
+					<Text size='sm' c='dimmed'>{item.description}</Text>
 					<Text size='sm' c='dimmed' className='geist'>
 						ID: {item.id.slice(0, 8)}...
 					</Text>

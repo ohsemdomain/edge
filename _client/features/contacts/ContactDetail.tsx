@@ -40,7 +40,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 					className='border-b border-gray-200'
 				>
 					<div>
-						<Title order={2}>{contact.name}</Title>
+						<Title order={2}>{contact.legal_name}</Title>
 						<Text c='dimmed' size='sm'>
 							Contact Details
 						</Text>
@@ -72,16 +72,16 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 					<Stack p={{ base: 'md', lg: 'xl' }}>
 						<div>
 							<Text size='sm' c='dimmed'>
-								Name
+								Legal Name
 							</Text>
-							<Text size='lg'>{contact.name}</Text>
+							<Text size='lg'>{contact.legal_name}</Text>
 						</div>
 						<div>
 							<Text size='sm' c='dimmed'>
-								Phone
+								Contact Type
 							</Text>
 							<Text size='lg' className='geist'>
-								{contact.phone}
+								{contact.contact_type}
 							</Text>
 						</div>
 						<div>

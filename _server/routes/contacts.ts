@@ -5,8 +5,8 @@ import { publicProcedure, router } from '../trpc'
 
 interface ContactRow {
 	id: string
-	name: string
-	phone: string
+	legal_name: string
+	contact_type: string
 	is_active: boolean
 	created_at: number
 }
@@ -34,8 +34,8 @@ export const contactsRouter = router({
 			const params: (string | number | boolean)[] = [isActive]
 
 			if (search) {
-				query += ' AND (name LIKE ? OR phone LIKE ?)'
-				params.push(`%${search}%`, `%${search}%`)
+				query += ' AND legal_name LIKE ?'
+				params.push(`%${search}%`)
 			}
 
 			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
@@ -48,8 +48,8 @@ export const contactsRouter = router({
 			return {
 				contacts: results.map((r) => ({
 					id: r.id,
-					name: r.name,
-					phone: r.phone,
+					legal_name: r.legal_name,
+					contact_type: r.contact_type,
 					is_active: r.is_active,
 					createdAt: new Date(r.created_at * 1000)
 				})),
@@ -60,8 +60,8 @@ export const contactsRouter = router({
 	create: publicProcedure
 		.input(
 			z.object({
-				name: z.string().min(1),
-				phone: z.string().min(1)
+				legal_name: z.string().min(1),
+				contact_type: z.string().default('client')
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
@@ -70,15 +70,15 @@ export const contactsRouter = router({
 			const createdAt = Math.floor(Date.now() / 1000)
 
 			await DB.prepare(
-				'INSERT INTO contacts (id, name, phone, is_active, created_at) VALUES (?, ?, ?, ?, ?)'
+				'INSERT INTO contacts (id, legal_name, contact_type, is_active, created_at) VALUES (?, ?, ?, ?, ?)'
 			)
-				.bind(id, input.name, input.phone, true, createdAt)
+				.bind(id, input.legal_name, input.contact_type, true, createdAt)
 				.run()
 
 			return {
 				id,
-				name: input.name,
-				phone: input.phone,
+				legal_name: input.legal_name,
+				contact_type: input.contact_type,
 				is_active: true,
 				createdAt: new Date(createdAt * 1000)
 			}
@@ -88,15 +88,15 @@ export const contactsRouter = router({
 		.input(
 			z.object({
 				id: z.string(),
-				name: z.string().min(1),
-				phone: z.string().min(1)
+				legal_name: z.string().min(1),
+				contact_type: z.string().min(1)
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
 
-			await DB.prepare('UPDATE contacts SET name = ?, phone = ? WHERE id = ?')
-				.bind(input.name, input.phone, input.id)
+			await DB.prepare('UPDATE contacts SET legal_name = ?, contact_type = ? WHERE id = ?')
+				.bind(input.legal_name, input.contact_type, input.id)
 				.run()
 
 			return { success: true }

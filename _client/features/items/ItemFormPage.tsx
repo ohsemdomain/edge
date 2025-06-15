@@ -12,7 +12,7 @@ interface ItemFormPageProps {
 export function ItemFormPage({ mode }: ItemFormPageProps) {
 	const navigate = useNavigate()
 	const { id: itemId } = useParams()
-	const [formData, setFormData] = useState({ name: '' })
+	const [formData, setFormData] = useState({ name: '', description: '' })
 	const utils = trpc.useUtils()
 
 	// Use cached data from ItemsList query for edit mode
@@ -25,7 +25,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 		if (mode === 'edit' && itemId && itemsData) {
 			const item = itemsData.items.find((i) => i.id === itemId)
 			if (item) {
-				setFormData({ name: item.name })
+				setFormData({ name: item.name, description: item.description })
 			}
 		}
 	}, [mode, itemId, itemsData])
@@ -61,7 +61,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	}
 
 	const isLoading = createMutation.isPending || updateMutation.isPending
-	const canSubmit = formData.name && !isLoading
+	const canSubmit = formData.name && formData.description && !isLoading
 
 	return (
 		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
@@ -77,6 +77,13 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 							placeholder='Enter item name'
 							value={formData.name}
 							onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+							required
+						/>
+						<TextInput
+							label='Description'
+							placeholder='Enter item description'
+							value={formData.description}
+							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
 							required
 						/>
 					</Stack>

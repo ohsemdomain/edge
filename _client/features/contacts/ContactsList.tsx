@@ -35,8 +35,8 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 	// Client-side filter
 	const filteredContacts = search
 		? data?.contacts?.filter((contact) =>
-				contact.name.toLowerCase().includes(search.toLowerCase()) ||
-				contact.phone.includes(search)
+				contact.legal_name.toLowerCase().includes(search.toLowerCase()) ||
+				contact.contact_type.toLowerCase().includes(search.toLowerCase())
 		  ) || []
 		: data?.contacts || []
 
@@ -131,9 +131,9 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 										borderColor: selectedId === contact.id ? 'var(--mantine-color-gray-4)' : undefined
 									}}
 								>
-									<Text fw={500}>{contact.name}</Text>
+									<Text fw={500}>{contact.legal_name}</Text>
 									<Text className='geist' size='sm' c='dimmed'>
-										{contact.phone}
+										{contact.contact_type}
 									</Text>
 								</Card>
 							</div>

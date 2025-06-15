@@ -27,7 +27,10 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 
 	// Client-side filter
 	const filteredItems = search
-		? data?.items?.filter((item) => item.name.toLowerCase().includes(search.toLowerCase())) || []
+		? data?.items?.filter((item) => 
+				item.name.toLowerCase().includes(search.toLowerCase()) ||
+				item.description.toLowerCase().includes(search.toLowerCase())
+			) || []
 		: data?.items || []
 
 	// Virtual scrolling
@@ -122,6 +125,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 									}}
 								>
 									<Text fw={500}>{item.name}</Text>
+									<Text size='sm' c='dimmed'>{item.description}</Text>
 									<Text className='geist' size='sm' c='dimmed'>
 										ID: {item.id}
 									</Text>

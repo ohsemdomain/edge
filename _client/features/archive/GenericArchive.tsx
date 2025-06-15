@@ -65,7 +65,7 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 								<div>{renderItem(item)}</div>
 								<ArchiveActions
 									onToggleActive={() => handleToggleActive(item.id, false)}
-									onDelete={() => handleDelete(item.id, item.name)}
+									onDelete={() => handleDelete(item.id, item.name || item.legal_name)}
 									isActive={false}
 									isToggling={isToggling}
 									isDeleting={isDeleting}

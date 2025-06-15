@@ -79,6 +79,13 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 
 						<div>
 							<Text size='sm' c='dimmed'>
+								Description
+							</Text>
+							<Text size='lg'>{item.description}</Text>
+						</div>
+
+						<div>
+							<Text size='sm' c='dimmed'>
 								ID
 							</Text>
 							<Text size='lg' className='geist'>

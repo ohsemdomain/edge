@@ -6,6 +6,7 @@ import { publicProcedure, router } from '../trpc'
 interface ItemRow {
 	id: string
 	name: string
+	description: string
 	is_active: boolean
 	created_at: number
 }
@@ -33,8 +34,8 @@ export const itemsRouter = router({
 			const params: (string | number | boolean)[] = [isActive]
 
 			if (search) {
-				query += ' AND name LIKE ?'
-				params.push(`%${search}%`)
+				query += ' AND (name LIKE ? OR description LIKE ?)'
+				params.push(`%${search}%`, `%${search}%`)
 			}
 
 			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
@@ -54,19 +55,20 @@ export const itemsRouter = router({
 		}),
 
 	create: publicProcedure
-		.input(z.object({ name: z.string().min(1) }))
+		.input(z.object({ name: z.string().min(1), description: z.string().min(1) }))
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
 			const id = crypto.randomUUID().slice(0, 8)
 			const createdAt = Math.floor(Date.now() / 1000)
 
-			await DB.prepare('INSERT INTO items (id, name, is_active, created_at) VALUES (?, ?, ?, ?)')
-				.bind(id, input.name, true, createdAt)
+			await DB.prepare('INSERT INTO items (id, name, description, is_active, created_at) VALUES (?, ?, ?, ?, ?)')
+				.bind(id, input.name, input.description, true, createdAt)
 				.run()
 
 			return {
 				id,
 				name: input.name,
+				description: input.description,
 				is_active: true,
 				createdAt: new Date(createdAt * 1000)
 			}
@@ -76,13 +78,14 @@ export const itemsRouter = router({
 		.input(
 			z.object({
 				id: z.string(),
-				name: z.string().min(1)
+				name: z.string().min(1),
+				description: z.string().min(1)
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
 
-			await DB.prepare('UPDATE items SET name = ? WHERE id = ?').bind(input.name, input.id).run()
+			await DB.prepare('UPDATE items SET name = ?, description = ? WHERE id = ?').bind(input.name, input.description, input.id).run()
 
 			return { success: true }
 		})
