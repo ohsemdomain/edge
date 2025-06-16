@@ -50,9 +50,6 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 
 	// Load all contacts to find selected contact details
 	const { data: contactsData } = trpc.contacts.list.useQuery({
-		search: '',
-		page: 1,
-		limit: 1000,
 		isActive: true
 	})
 

@@ -1,5 +1,5 @@
 // _client/features/invoices/AddressDisplay.tsx
-import { Button, Group, Paper, Stack, Text } from '@mantine/core'
+import { ActionIcon, Group, Paper, Stack, Text } from '@mantine/core'
 import { Edit } from 'lucide-react'
 
 interface Address {
@@ -45,38 +45,38 @@ export function AddressDisplay({ contact, onEditContact }: AddressDisplayProps) 
 
 	return (
 		<Paper withBorder p='md' bg='gray.0'>
-			<Group justify='space-between' align='flex-start' mb='sm'>
-				<Text size='sm' fw={500}>Customer Information</Text>
-				<Button
-					variant='light'
-					size='xs'
-					leftSection={<Edit size={14} />}
-					onClick={() => onEditContact(contact.id)}
-				>
-					Edit
-				</Button>
-			</Group>
-
 			<Stack gap='sm'>
-				{/* Contact Info */}
-				<div>
-					<Text size='sm' fw={500}>{contact.name}</Text>
-					{contact.email && <Text size='sm' c='dimmed'>{contact.email}</Text>}
-				</div>
-
 				{/* Addresses */}
 				{(contact.billingAddress || contact.shippingAddress) && (
 					<Group grow align='flex-start' gap='md'>
 						{contact.billingAddress && (
 							<div>
-								<Text size='sm' fw={500} mb='xs' c='blue'>Billing Address</Text>
+								<Group align='center' gap='xs' mb='xs'>
+									<Text size='sm' fw={500}>Billing Address</Text>
+									<ActionIcon
+										variant='transparent'
+										size='xs'
+										onClick={() => onEditContact(contact.id)}
+									>
+										<Edit size={12} />
+									</ActionIcon>
+								</Group>
 								{formatAddress(contact.billingAddress)}
 							</div>
 						)}
 						
 						{contact.shippingAddress && (
 							<div>
-								<Text size='sm' fw={500} mb='xs' c='green'>Shipping Address</Text>
+								<Group align='center' gap='xs' mb='xs'>
+									<Text size='sm' fw={500}>Shipping Address</Text>
+									<ActionIcon
+										variant='transparent'
+										size='xs'
+										onClick={() => onEditContact(contact.id)}
+									>
+										<Edit size={12} />
+									</ActionIcon>
+								</Group>
 								{formatAddress(contact.shippingAddress)}
 							</div>
 						)}

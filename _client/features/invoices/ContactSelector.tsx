@@ -20,8 +20,8 @@ export function ContactSelector({
 	value,
 	onChange,
 	onAddContact,
-	placeholder = 'Select customer',
-	label = 'Customer',
+	placeholder = 'Select contact',
+	label = 'Contact',
 	required = false,
 	forceClose = false
 }: ContactSelectorProps) {
@@ -44,9 +44,6 @@ export function ContactSelector({
 	// Load all contacts once
 	const { data: contactsData, isLoading } = trpc.contacts.list.useQuery(
 		{
-			search: '',
-			page: 1,
-			limit: 1000,
 			isActive: true
 		},
 		{
@@ -151,7 +148,7 @@ export function ContactSelector({
 					<Box p='sm'>
 						<TextInput
 							ref={searchInputRef}
-							placeholder='Search customers...'
+							placeholder='Search contacts...'
 							value={contactSelectorSearch}
 							onChange={(e) => setContactSelectorSearch(e.target.value)}
 							leftSection={<Search size={16} />}
@@ -186,8 +183,8 @@ export function ContactSelector({
 												e.currentTarget.style.backgroundColor = 'transparent'
 											}}
 										>
-											<Text size='sm' fw={500}>
-												{contact.company_name} • {contact.id}
+											<Text size='sm' fw={500} tt="uppercase">
+												{contact.company_name}
 											</Text>
 											<Text size='xs' c='dimmed'>
 												{contact.primary_phone}
@@ -197,7 +194,7 @@ export function ContactSelector({
 								</Box>
 							) : (
 								<Text size='sm' c='dimmed' ta='center' p='xl'>
-									No customers found
+									No contacts found
 								</Text>
 							)}
 						</ScrollArea>
@@ -213,7 +210,7 @@ export function ContactSelector({
 							display: 'flex',
 							alignItems: 'center',
 							gap: '12px',
-							padding: '12px 16px',
+							padding: '16px',
 							borderTop: '1px solid var(--mantine-color-gray-3)',
 							backgroundColor: 'transparent',
 							width: '100%',
@@ -242,7 +239,7 @@ export function ContactSelector({
 							<Plus size={16} color='white' />
 						</Box>
 						<Text c='blue.5' size='sm' fw={500}>
-							New Customer
+							New Contact
 						</Text>
 					</UnstyledButton>
 				</Paper>

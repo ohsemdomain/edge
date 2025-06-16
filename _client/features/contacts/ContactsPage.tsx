@@ -13,9 +13,6 @@ export function ContactsPage() {
 	const selectedId = searchParams.get('id') || ''
 
 	const { data } = trpc.contacts.list.useQuery({
-		search: '',
-		page: 1,
-		limit: 1000,
 		isActive: true
 	})
 
