@@ -2,7 +2,7 @@ import toast from 'react-hot-toast'
 // _client/hooks/useArchive.ts
 import { trpc } from '~c/trpc'
 
-export function useArchiveActions(feature: 'items' | 'contacts', refetch: () => void) {
+export function useArchiveActions(feature: 'items' | 'contacts' | 'invoices', refetch: () => void) {
 	const utils = trpc.useUtils()
 
 	const toggleActiveMutation = trpc[feature].toggleActive.useMutation({

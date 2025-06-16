@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   invoice_date INTEGER NOT NULL,
   due_date INTEGER,
   notes TEXT,
+  share_token TEXT,
   is_active BOOLEAN DEFAULT TRUE NOT NULL,
   created_at INTEGER NOT NULL,
   FOREIGN KEY (contact_id) REFERENCES contacts(id)
@@ -15,6 +16,7 @@ CREATE TABLE IF NOT EXISTS invoices (
 CREATE INDEX idx_invoices_contact_id ON invoices(contact_id);
 CREATE INDEX idx_invoices_invoice_number ON invoices(invoice_number);
 CREATE INDEX idx_invoices_is_active ON invoices(is_active);
+CREATE UNIQUE INDEX idx_invoices_share_token ON invoices(share_token) WHERE share_token IS NOT NULL;
 
 -- Create invoice_items table
 CREATE TABLE IF NOT EXISTS invoice_items (

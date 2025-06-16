@@ -4,7 +4,8 @@
       "Bash(rm:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(wrangler d1 execute:*)"
     ]
   },
   "enableAllProjectMcpServers": false
