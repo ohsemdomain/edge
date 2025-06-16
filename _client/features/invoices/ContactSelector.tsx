@@ -1,17 +1,10 @@
 // _client/features/invoices/ContactSelector.tsx
-import { ActionIcon, Button, Group, Loader, Paper, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
-import { Plus, Search, User, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Box, Button, Paper, ScrollArea, Text, TextInput, UnstyledButton } from '@mantine/core'
+import { useClickOutside } from '@mantine/hooks'
+import { ChevronDown, Plus, Search } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { trpc } from '~c/trpc'
-
-interface Contact {
-	id: string
-	name: string
-	company_name: string
-	email?: string
-	primary_phone: string
-}
+import { useInvoiceStore } from './useInvoiceStore'
 
 interface ContactSelectorProps {
 	value: string
@@ -20,125 +13,126 @@ interface ContactSelectorProps {
 	placeholder?: string
 	label?: string
 	required?: boolean
-	forceClose?: boolean // External prop to force close the dropdown
+	forceClose?: boolean
 }
 
-export function ContactSelector({ 
-	value, 
-	onChange, 
-	onAddContact, 
-	placeholder = "Search contacts...",
-	label = "Customer",
+export function ContactSelector({
+	value,
+	onChange,
+	onAddContact,
+	placeholder = 'Select customer',
+	label = 'Customer',
 	required = false,
 	forceClose = false
 }: ContactSelectorProps) {
-	const [searchQuery, setSearchQuery] = useState('')
-	const [isOpen, setIsOpen] = useState(false)
-	const [debouncedSearch] = useDebouncedValue(searchQuery, 300)
-	const inputRef = useRef<HTMLInputElement>(null)
+	const searchInputRef = useRef<HTMLInputElement>(null)
 
-	// Load contacts with debounced search - always enabled but cached
-	const { data: contactsData, isLoading } = trpc.contacts.list.useQuery({
-		search: debouncedSearch,
-		page: 1,
-		limit: 50,
-		isActive: true
-	}, {
-		staleTime: 30000, // Cache for 30 seconds
-		refetchOnWindowFocus: false
-	})
+	// Get state and actions from Zustand
+	const {
+		contactSelectorSearch,
+		contactSelectorDropdownOpen,
+		allContacts,
+		setContactSelectorSearch,
+		setContactSelectorDropdownOpen,
+		setAllContacts,
+		toggleContactSelectorDropdown,
+		selectContact
+	} = useInvoiceStore()
 
-	const contacts = contactsData?.contacts || []
-	const selectedContact = contacts.find(c => c.id === value)
+	const dropdownRef = useClickOutside(() => setContactSelectorDropdownOpen(false))
 
-	// Sync external value changes with internal state
-	useEffect(() => {
-		if (!value) {
-			// If value is cleared externally, clear internal state
-			setSearchQuery('')
-		} else if (selectedContact && !isOpen && searchQuery !== selectedContact.name) {
-			// If value is set externally and we're not in edit mode, show the contact name
-			setSearchQuery(selectedContact.name)
+	// Load all contacts once
+	const { data: contactsData, isLoading } = trpc.contacts.list.useQuery(
+		{
+			search: '',
+			page: 1,
+			limit: 1000,
+			isActive: true
+		},
+		{
+			staleTime: 5 * 60 * 1000,
+			refetchOnWindowFocus: false
 		}
-	}, [value, selectedContact])
+	)
+
+	// Update store when contacts load
+	useEffect(() => {
+		if (contactsData?.contacts) {
+			setAllContacts(contactsData.contacts)
+		}
+	}, [contactsData, setAllContacts])
+
+	const selectedContact = allContacts.find((c) => c.id === value)
 
 	// Handle external force close
 	useEffect(() => {
 		if (forceClose) {
-			setIsOpen(false)
+			setContactSelectorDropdownOpen(false)
 		}
-	}, [forceClose])
+	}, [forceClose, setContactSelectorDropdownOpen])
 
-	const handleSelectContact = (contact: Contact) => {
-		onChange(contact.id)
-		setSearchQuery(contact.name)
-		setIsOpen(false)
-		inputRef.current?.blur() // Remove focus after selection
-	}
-
-	const handleSearchFocus = () => {
-		setIsOpen(true)
-		if (selectedContact) {
-			setSearchQuery('')
+	// Focus search input when dropdown opens
+	useEffect(() => {
+		if (contactSelectorDropdownOpen && searchInputRef.current) {
+			searchInputRef.current.focus()
 		}
+	}, [contactSelectorDropdownOpen])
+
+	const handleSelectContact = (contactId: string) => {
+		selectContact(contactId)
+		onChange(contactId)
 	}
 
-	const handleSearchChange = (query: string) => {
-		setSearchQuery(query)
-		if (!isOpen) setIsOpen(true)
-	}
-
-	const handleClear = () => {
-		onChange('')
-		setSearchQuery('')
-		setIsOpen(false)
-		inputRef.current?.blur() // Remove focus when clearing
-	}
-
-	const filteredContacts = searchQuery.length === 0 
-		? contacts.slice(0, 10) // Show first 10 when no search
-		: contacts.filter(contact =>
-			contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			contact.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			(contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-			contact.primary_phone?.includes(searchQuery)
-		).slice(0, 10)
-
-	// Display the selected contact name or search query
-	const displayValue = selectedContact && !isOpen ? selectedContact.name : searchQuery
+	// Filter contacts based on search
+	const filteredContacts =
+		contactSelectorSearch.trim() === ''
+			? allContacts
+			: allContacts.filter((contact) => {
+					const search = contactSelectorSearch.toLowerCase()
+					return (
+						contact.name?.toLowerCase().includes(search) ||
+						contact.company_name?.toLowerCase().includes(search) ||
+						contact.primary_phone?.includes(search)
+					)
+				})
 
 	return (
-		<div style={{ position: 'relative' }}>
-			<TextInput
-				ref={inputRef}
-				label={label}
-				placeholder={placeholder}
-				value={displayValue}
-				onChange={(e) => handleSearchChange(e.target.value)}
-				onFocus={handleSearchFocus}
-				onBlur={() => {
-					// Delay closing to allow for dropdown clicks
-					setTimeout(() => setIsOpen(false), 150)
-				}}
-				leftSection={<Search size={16} />}
-				rightSection={
-					(selectedContact || searchQuery) ? (
-						<ActionIcon
-							variant='transparent'
-							onClick={handleClear}
-							size='sm'
-						>
-							<X size={16} />
-						</ActionIcon>
-					) : null
-				}
-				required={required}
-				size='md'
-			/>
+		<Box style={{ position: 'relative' }}>
+			{label && (
+				<Text size='sm' fw={500} mb={4}>
+					{label}
+					{required && <span style={{ color: 'red' }}> *</span>}
+				</Text>
+			)}
 
-			{isOpen && (
+			{/* Button-like input with chevron */}
+			<UnstyledButton
+				onClick={toggleContactSelectorDropdown}
+				style={{
+					width: '100%',
+					padding: '8px 12px',
+					border: '1px solid var(--mantine-color-gray-4)',
+					borderRadius: '6px',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					minHeight: '46px',
+					backgroundColor: 'var(--mantine-color-white)',
+					cursor: 'pointer'
+				}}
+			>
+				<Text size='sm' c={selectedContact ? undefined : 'dimmed'}>
+					{selectedContact ? selectedContact.name : placeholder}
+				</Text>
+				<ChevronDown size={18} style={{ flexShrink: 0 }} />
+			</UnstyledButton>
+
+			{/* Dropdown Panel */}
+			{contactSelectorDropdownOpen && (
 				<Paper
+					ref={dropdownRef}
 					shadow='md'
+					radius='md'
 					withBorder
 					style={{
 						position: 'absolute',
@@ -146,95 +140,113 @@ export function ContactSelector({
 						left: 0,
 						right: 0,
 						zIndex: 1000,
-						maxHeight: 300,
-						marginTop: 4
+						marginTop: 4,
+						height: '400px',
+						display: 'flex',
+						flexDirection: 'column',
+						overflow: 'hidden'
 					}}
-					onMouseDown={(e) => e.preventDefault()} // Prevent onBlur when clicking dropdown
 				>
-					<Stack gap={0}>
-						{/* Add Contact Button */}
-						<Button
-							variant='light'
-							leftSection={<Plus size={16} />}
-							onClick={() => {
-								setIsOpen(false) // Close dropdown first
-								inputRef.current?.blur() // Remove focus from input
-								onAddContact()
-							}}
-							style={{
-								borderRadius: 0,
-								borderBottom: '1px solid var(--mantine-color-gray-2)'
-							}}
-							fullWidth
-							justify='flex-start'
-						>
-							Add New Contact
-						</Button>
+					{/* Top Row - Search Input */}
+					<Box p='sm'>
+						<TextInput
+							ref={searchInputRef}
+							placeholder='Search customers...'
+							value={contactSelectorSearch}
+							onChange={(e) => setContactSelectorSearch(e.target.value)}
+							leftSection={<Search size={16} />}
+							size='sm'
+						/>
+					</Box>
 
-						{/* Loading State */}
-						{isLoading && (
-							<Group justify='center' p='md'>
-								<Loader size='sm' />
-								<Text size='sm' c='dimmed'>Searching...</Text>
-							</Group>
-						)}
-
-						{/* Contact List */}
-						{!isLoading && (
-							<ScrollArea mah={240}>
-								{/* Debug info */}
-								{process.env.NODE_ENV === 'development' && (
-									<Text size='xs' p='xs' c='dimmed'>
-										Debug: {contacts.length} total, {filteredContacts.length} filtered, isOpen: {isOpen.toString()}
-									</Text>
-								)}
-								
-								{filteredContacts.length > 0 ? (
-									filteredContacts.map((contact) => (
-										<Button
+					{/* Middle Row - Contact List */}
+					<Box style={{ flex: 1, overflow: 'hidden' }}>
+						<ScrollArea h='100%' type='scroll'>
+							{isLoading ? (
+								<Text size='sm' c='dimmed' ta='center' p='xl'>
+									Loading...
+								</Text>
+							) : filteredContacts.length > 0 ? (
+								<Box>
+									{filteredContacts.map((contact) => (
+										<UnstyledButton
 											key={contact.id}
-											variant='subtle'
+											onClick={() => handleSelectContact(contact.id)}
 											style={{
-												borderRadius: 0,
-												height: 'auto',
-												padding: '12px 16px'
+												padding: '12px 16px',
+												width: '100%',
+												textAlign: 'left',
+												borderBottom: '1px solid var(--mantine-color-gray-2)',
+												display: 'block'
 											}}
-											fullWidth
-											justify='flex-start'
-											onClick={() => handleSelectContact(contact)}
+											onMouseEnter={(e) => {
+												e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)'
+											}}
+											onMouseLeave={(e) => {
+												e.currentTarget.style.backgroundColor = 'transparent'
+											}}
 										>
-											<Group gap='sm' wrap='nowrap' w='100%'>
-												<ActionIcon variant='light' size='sm'>
-													<User size={14} />
-												</ActionIcon>
-												<div style={{ flex: 1, textAlign: 'left' }}>
-													<Text size='sm' fw={500} truncate>
-														{contact.name}
-													</Text>
-													<Group gap='xs'>
-														{contact.email && (
-															<Text size='xs' c='dimmed' truncate>
-																{contact.email}
-															</Text>
-														)}
-														<Text size='xs' c='dimmed'>
-															{contact.primary_phone}
-														</Text>
-													</Group>
-												</div>
-											</Group>
-										</Button>
-									))
-								) : (
-									<Text size='sm' c='dimmed' p='md' ta='center'>
-										{searchQuery ? 'No contacts found' : 'Click to see contacts'}
-									</Text>
-								)}
-							</ScrollArea>
-						)}
-					</Stack>
+											<Text size='sm' fw={500}>
+												{contact.company_name} • {contact.id}
+											</Text>
+											<Text size='xs' c='dimmed'>
+												{contact.primary_phone}
+											</Text>
+										</UnstyledButton>
+									))}
+								</Box>
+							) : (
+								<Text size='sm' c='dimmed' ta='center' p='xl'>
+									No customers found
+								</Text>
+							)}
+						</ScrollArea>
+					</Box>
+
+					{/* Bottom Row - New Customer Button */}
+					<UnstyledButton
+						onClick={() => {
+							setContactSelectorDropdownOpen(false)
+							onAddContact()
+						}}
+						style={{
+							display: 'flex',
+							alignItems: 'center',
+							gap: '12px',
+							padding: '12px 16px',
+							borderTop: '1px solid var(--mantine-color-gray-3)',
+							backgroundColor: 'transparent',
+							width: '100%',
+							cursor: 'pointer',
+							transition: 'background-color 0.1s'
+						}}
+						onMouseEnter={(e) => {
+							e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-0)'
+						}}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.backgroundColor = 'transparent'
+						}}
+					>
+						<Box
+							style={{
+								width: '20px',
+								height: '20px',
+								backgroundColor: 'var(--mantine-color-blue-6)',
+								borderRadius: '4px',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								flexShrink: 0
+							}}
+						>
+							<Plus size={16} color='white' />
+						</Box>
+						<Text c='blue.5' size='sm' fw={500}>
+							New Customer
+						</Text>
+					</UnstyledButton>
 				</Paper>
 			)}
-		</div>
+		</Box>
 	)
 }

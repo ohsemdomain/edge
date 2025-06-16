@@ -1,7 +1,7 @@
 //_client/features/invoices/InvoiceFormPage.tsx
 import { Box, Button, Group, ScrollArea, Stack, Text, Textarea } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDateForDisplay } from '~c/lib/formatter'
@@ -10,32 +10,10 @@ import { AddressDisplay } from './AddressDisplay'
 import { ContactFormDrawer } from './ContactFormDrawer'
 import { ContactSelector } from './ContactSelector'
 import { InvoiceItems } from './InvoiceItems'
+import { useInvoiceStore } from './useInvoiceStore'
 
 interface InvoiceFormPageProps {
 	mode: 'create' | 'edit'
-}
-
-interface InvoiceItem {
-	id?: string
-	itemId?: string
-	description: string
-	quantity: number
-	unitPrice: number
-}
-
-interface ContactAddress {
-	id: string
-	receiver: string
-	address_line1: string
-	address_line2?: string
-	address_line3?: string
-	address_line4?: string
-	postcode: string
-	city: string
-	state: string
-	country: string
-	is_default_billing: boolean
-	is_default_shipping: boolean
 }
 
 export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
@@ -43,34 +21,31 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 	const { id: invoiceId } = useParams()
 	const utils = trpc.useUtils()
 
-	const [formData, setFormData] = useState({
-		contactId: '',
-		invoiceDate: new Date(),
-		notes: '',
-		items: [{ description: '', quantity: 1, unitPrice: 0 }] as InvoiceItem[]
-	})
-
-	const [selectedContact, setSelectedContact] = useState<{
-		id: string
-		name: string
-		email?: string
-		billingAddress?: ContactAddress
-		shippingAddress?: ContactAddress
-	} | null>(null)
-
-	const [drawerState, setDrawerState] = useState<{
-		opened: boolean
-		mode: 'create' | 'edit'
-		contactId?: string
-	}>({
-		opened: false,
-		mode: 'create'
-	})
+	// Get all state and actions from Zustand store
+	const {
+		contactId,
+		invoiceDate,
+		notes,
+		items,
+		selectedContact,
+		isContactSelectorOpen,
+		contactDrawer,
+		setContactId,
+		setInvoiceDate,
+		setNotes,
+		setItems,
+		setSelectedContact,
+		setContactSelectorOpen,
+		openContactDrawer,
+		closeContactDrawer,
+		resetForm,
+		loadInvoice
+	} = useInvoiceStore()
 
 	// Load addresses for selected contact
 	const { data: addressesData } = trpc.contacts.getAddresses.useQuery(
-		{ contactId: formData.contactId },
-		{ enabled: !!formData.contactId }
+		{ contactId: contactId },
+		{ enabled: !!contactId }
 	)
 
 	// Load all contacts to find selected contact details
@@ -87,27 +62,24 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 		{ enabled: mode === 'edit' && !!invoiceId }
 	)
 
+	// Reset form when switching to create mode
+	useEffect(() => {
+		if (mode === 'create') {
+			resetForm()
+		}
+	}, [mode, resetForm])
+
+	// Load invoice data for edit mode
 	useEffect(() => {
 		if (mode === 'edit' && invoice) {
-			setFormData({
-				contactId: invoice.contact_id,
-				invoiceDate: new Date(invoice.invoiceDate),
-				notes: invoice.notes || '',
-				items: invoice.items.map((item) => ({
-					id: item.id,
-					itemId: item.item_id || undefined,
-					description: item.description,
-					quantity: item.quantity,
-					unitPrice: item.unit_price
-				}))
-			})
+			loadInvoice(invoice)
 		}
-	}, [mode, invoice])
+	}, [mode, invoice, loadInvoice])
 
 	// Update selected contact when contact changes
 	useEffect(() => {
-		if (formData.contactId && contactsData && addressesData) {
-			const contact = contactsData.contacts.find(c => c.id === formData.contactId)
+		if (contactId && contactsData && addressesData) {
+			const contact = contactsData.contacts.find(c => c.id === contactId)
 			if (contact) {
 				const billingAddress = addressesData.find(addr => addr.is_default_billing)
 				const shippingAddress = addressesData.find(addr => addr.is_default_shipping)
@@ -116,14 +88,14 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 					id: contact.id,
 					name: contact.name,
 					email: contact.email || undefined,
-					billingAddress: billingAddress as ContactAddress,
-					shippingAddress: shippingAddress as ContactAddress
+					billingAddress: billingAddress as any,
+					shippingAddress: shippingAddress as any
 				})
 			}
 		} else {
 			setSelectedContact(null)
 		}
-	}, [formData.contactId, contactsData, addressesData])
+	}, [contactId, contactsData, addressesData, setSelectedContact])
 
 	const createMutation = trpc.invoices.create.useMutation({
 		onSuccess: (data) => {
@@ -141,18 +113,18 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 
 	const handleSubmit = () => {
 		// Validate required fields
-		if (!formData.contactId) {
+		if (!contactId) {
 			toast.error('Please select a contact')
 			return
 		}
 
-		if (formData.items.length === 0 || formData.items.every((item) => !item.description)) {
+		if (items.length === 0 || items.every((item) => !item.description)) {
 			toast.error('Please add at least one line item')
 			return
 		}
 
 		// Filter out empty items
-		const validItems = formData.items.filter((item) => item.description.trim())
+		const validItems = items.filter((item) => item.description.trim())
 
 		if (validItems.length === 0) {
 			toast.error('Please add at least one line item with a description')
@@ -160,9 +132,9 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 		}
 
 		const submitData = {
-			contactId: formData.contactId,
-			invoiceDate: formData.invoiceDate.toISOString(),
-			notes: formData.notes || undefined,
+			contactId: contactId,
+			invoiceDate: invoiceDate.toISOString(),
+			notes: notes || undefined,
 			items: validItems.map((item) => ({
 				id: item.id,
 				itemId: item.itemId,
@@ -189,49 +161,30 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 
 	// Drawer handlers
 	const handleAddContact = () => {
-		// Clear any previous state before opening
-		setDrawerState({
-			opened: true,
-			mode: 'create',
-			contactId: undefined // Explicitly clear contactId
-		})
+		openContactDrawer('create')
 	}
 
 	const handleEditContact = (contactId: string) => {
-		// Ensure we have a clean state transition
-		setDrawerState({
-			opened: true,
-			mode: 'edit',
-			contactId
-		})
+		openContactDrawer('edit', contactId)
 	}
 
-	const handleContactSuccess = (contactId: string) => {
+	const handleContactSuccess = (newContactId: string) => {
 		// Update the form data and invalidate queries to refresh addresses
-		setFormData({ ...formData, contactId })
+		setContactId(newContactId)
 		utils.contacts.list.invalidate()
 		utils.contacts.getAddresses.invalidate()
 		
-		// Close drawer with clean state
-		setDrawerState({
-			opened: false,
-			mode: 'create',
-			contactId: undefined
-		})
+		// Close drawer
+		closeContactDrawer()
 	}
 
 	const handleCloseDrawer = () => {
-		// Reset to clean state when closing
-		setDrawerState({
-			opened: false,
-			mode: 'create',
-			contactId: undefined
-		})
+		closeContactDrawer()
 	}
 
 	const isLoading = createMutation.isPending || updateMutation.isPending
 	const canSubmit =
-		formData.contactId && formData.items.some((item) => item.description.trim()) && !isLoading
+		contactId && items.some((item) => item.description.trim()) && !isLoading
 
 	return (
 		<>
@@ -252,11 +205,11 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 					<Stack gap='lg'>
 						{/* Contact Selection */}
 						<ContactSelector
-							value={formData.contactId}
-							onChange={(contactId) => setFormData({ ...formData, contactId })}
+							value={contactId}
+							onChange={setContactId}
 							onAddContact={handleAddContact}
 							required
-							forceClose={drawerState.opened}
+							forceClose={contactDrawer.opened}
 						/>
 						
 						{/* Address Display */}
@@ -270,8 +223,8 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 						{/* Invoice Date */}
 						<DateInput
 							label='Invoice Date'
-							value={formData.invoiceDate}
-							onChange={(date) => setFormData({ ...formData, invoiceDate: date || new Date() })}
+							value={invoiceDate}
+							onChange={(date) => setInvoiceDate(date || new Date())}
 							valueFormat="DD.MM.YYYY"
 							dateParser={(input) => {
 								// Parse custom format DD.MM.YYYY
@@ -288,29 +241,28 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 
 						{/* Line Items */}
 						<InvoiceItems
-							items={formData.items}
-							onChange={(items) => setFormData({ ...formData, items })}
+							items={items}
+							onChange={setItems}
 						/>
 
 						{/* Notes */}
 						<Textarea
 							label='Notes (Optional)'
 							placeholder='Additional notes for this invoice'
-							value={formData.notes}
-							onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+							value={notes}
+							onChange={(e) => setNotes(e.target.value)}
 							rows={3}
 							size='md'
 						/>
 
 						{/* Actions */}
 						<Group mt='xl'>
-							<Button onClick={handleSubmit} disabled={!canSubmit} loading={isLoading}>
+							<Button onClick={handleSubmit} disabled={!canSubmit}>
 								{mode === 'create' ? 'Create' : 'Save'}
 							</Button>
 							<Button
 								variant='subtle'
 								onClick={() => navigate('/invoices')}
-								disabled={isLoading}
 							>
 								Cancel
 							</Button>
@@ -322,11 +274,11 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 
 		{/* Contact Form Drawer */}
 		<ContactFormDrawer
-			opened={drawerState.opened}
+			opened={contactDrawer.opened}
 			onClose={handleCloseDrawer}
 			onSuccess={handleContactSuccess}
-			mode={drawerState.mode}
-			contactId={drawerState.contactId}
+			mode={contactDrawer.mode}
+			contactId={contactDrawer.contactId}
 		/>
 	</>
 	)
