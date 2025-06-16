@@ -290,10 +290,17 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 		<Drawer
 			opened={opened}
 			onClose={onClose}
-			position='right'
-			size='lg'
+			position='top'
+			size='xl'
 			title={mode === 'create' ? 'Add New Contact' : 'Edit Contact'}
 			overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
+			styles={{
+				content: {
+					marginLeft: 'auto',
+					marginRight: 'auto',
+					maxWidth: '1200px'
+				}
+			}}
 		>
 			<ScrollArea h='100%' type='never'>
 				<Box p='md'>
