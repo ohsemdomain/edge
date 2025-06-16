@@ -2,8 +2,6 @@
 import { z } from 'zod'
 import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
-import { generateShareToken, generateNewShareToken } from '../public-ssr/invoice/link-generator'
-import { getInvoiceById } from '../public-ssr/invoice/data-fetcher'
 
 
 const archiveInvoicesRouter = createArchiveRouter('invoices')
@@ -132,13 +130,99 @@ export const invoicesRouter = router({
 	getById: publicProcedure
 		.input(z.object({ id: z.string() }))
 		.query(async ({ input, ctx }) => {
-			return await getInvoiceById(input.id, ctx.env.DB)
-		}),
+			const { DB } = ctx.env
+			const { id } = input
 
-	generateShareLink: publicProcedure
-		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input, ctx }) => {
-			return await generateShareToken(input.id, ctx.env.DB)
+			// Get invoice with contact details
+			const { results } = await DB.prepare(`
+				SELECT 
+					i.*,
+					c.name as contact_name,
+					c.email as contact_email,
+					c.phone as contact_phone
+				FROM invoices i
+				LEFT JOIN contacts c ON i.contact_id = c.id
+				WHERE i.id = ?
+			`)
+				.bind(id)
+				.all()
+
+			if (results.length === 0) {
+				throw new Error('Invoice not found')
+			}
+
+			const invoice = results[0] as any
+
+			// Get invoice items
+			const { results: items } = await DB.prepare(`
+				SELECT 
+					ii.*,
+					i.name as item_name
+				FROM invoice_items ii
+				LEFT JOIN items i ON ii.item_id = i.id
+				WHERE ii.invoice_id = ?
+			`)
+				.bind(id)
+				.all()
+
+			// Get payments
+			const { results: payments } = await DB.prepare(`
+				SELECT * FROM payments
+				WHERE invoice_id = ?
+				ORDER BY payment_date DESC
+			`)
+				.bind(id)
+				.all()
+
+			// Calculate totals
+			const total = items.reduce((sum, item: any) => sum + (item.quantity * item.unit_price), 0)
+			const paidAmount = payments.reduce((sum, payment: any) => sum + payment.amount, 0)
+
+			// Get contact balance
+			const { results: invoiceTotals } = await DB.prepare(`
+				SELECT 
+					COALESCE(SUM(ii.quantity * ii.unit_price), 0) as total
+				FROM invoices i
+				LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
+				WHERE i.contact_id = ?
+				AND i.is_active = true
+			`)
+				.bind(invoice.contact_id)
+				.all()
+
+			const { results: paymentTotals } = await DB.prepare(`
+				SELECT 
+					COALESCE(SUM(p.amount), 0) as total
+				FROM payments p
+				JOIN invoices i ON p.invoice_id = i.id
+				WHERE i.contact_id = ?
+				AND i.is_active = true
+			`)
+				.bind(invoice.contact_id)
+				.all()
+
+			const contactBalance = (invoiceTotals[0] as any).total - (paymentTotals[0] as any).total
+
+			// Determine status
+			let status = 'unpaid'
+			if (paidAmount >= total) {
+				status = 'paid'
+			} else if (paidAmount > 0) {
+				status = 'partial'
+			}
+
+			return {
+				...invoice,
+				items,
+				payments,
+				total,
+				paidAmount,
+				contactBalance,
+				status,
+				invoiceDate: new Date(invoice.invoice_date * 1000),
+				dueDate: invoice.due_date ? new Date(invoice.due_date * 1000) : null,
+				createdAt: new Date(invoice.created_at * 1000)
+			}
 		}),
 
 	create: publicProcedure
@@ -163,11 +247,10 @@ export const invoicesRouter = router({
 			const createdAt = Math.floor(Date.now() / 1000)
 			const invoiceNumber = await generateInvoiceNumber(DB)
 
-			// Create invoice with share token
-			const shareToken = generateNewShareToken()
+			// Create invoice
 			await DB.prepare(
-				`INSERT INTO invoices (id, contact_id, invoice_number, invoice_date, due_date, notes, share_token, is_active, created_at) 
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+				`INSERT INTO invoices (id, contact_id, invoice_number, invoice_date, due_date, notes, is_active, created_at) 
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 			)
 				.bind(
 					invoiceId,
@@ -176,7 +259,6 @@ export const invoicesRouter = router({
 					Math.floor(new Date(input.invoiceDate).getTime() / 1000),
 					null, // No due date
 					input.notes || null,
-					shareToken,
 					true,
 					createdAt
 				)

@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { formatDate, formatDateForDisplay, formatCurrency } from '~c/lib/formatter'
 import { trpc } from '~c/trpc'
-import { CustomLink } from '~c/components/CustomLink'
 import { PaymentModal } from './PaymentModal'
 
 interface InvoiceDetailProps {
@@ -17,10 +16,8 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 	const navigate = useNavigate()
 	const utils = trpc.useUtils()
 	const [paymentModalOpen, setPaymentModalOpen] = useState(false)
-	const [shareToken, setShareToken] = useState<string | null>(null)
 
 	const { data: invoice, refetch } = trpc.invoices.getById.useQuery({ id: invoiceId })
-	const generateShareLink = trpc.invoices.generateShareLink.useMutation()
 
 	const toggleActiveMutation = trpc.invoices.toggleActive.useMutation({
 		onSuccess: () => {
@@ -40,20 +37,6 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 		})
 	}
 
-	// Generate share link automatically when component loads
-	useEffect(() => {
-		if (invoiceId && !shareToken && !generateShareLink.isPending) {
-			generateShareLink.mutateAsync({ id: invoiceId })
-				.then((result) => {
-					setShareToken(result.shareToken)
-				})
-				.catch((error) => {
-					console.error('Failed to generate share link:', error)
-				})
-		}
-	}, [invoiceId])
-
-	const shareUrl = shareToken ? `${window.location.origin}/share/invoice/${shareToken}` : null
 
 
 	const getStatusBadge = (status: string) => {
@@ -86,23 +69,6 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							</Text>
 						</div>
 						<Group>
-							{shareUrl ? (
-								<CustomLink 
-									url={shareUrl} 
-									label="Share"
-									variant="button"
-									size="sm"
-								/>
-							) : (
-								<Button
-									size='sm'
-									variant='outline'
-									loading={generateShareLink.isPending}
-									disabled
-								>
-									Generating Link...
-								</Button>
-							)}
 							<Button
 								size='sm'
 								variant='outline'
@@ -319,19 +285,6 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 								)}
 							</div>
 
-							{/* Share Link Section */}
-							{shareUrl && (
-								<div>
-									<Text size='sm' c='dimmed' mb='xs'>Client Share Link</Text>
-									<Card withBorder p='sm'>
-										<CustomLink 
-											url={shareUrl} 
-											variant="input"
-											size="sm"
-										/>
-									</Card>
-								</div>
-							)}
 
 							{/* Metadata */}
 							<div>

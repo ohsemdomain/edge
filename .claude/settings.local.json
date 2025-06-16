@@ -5,7 +5,8 @@
       "Bash(mkdir:*)",
       "Bash(mv:*)",
       "Bash(ls:*)",
-      "Bash(wrangler d1 execute:*)"
+      "Bash(wrangler d1 execute:*)",
+      "Bash(grep:*)"
     ]
   },
   "enableAllProjectMcpServers": false
