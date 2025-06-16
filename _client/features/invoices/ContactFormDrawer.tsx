@@ -13,9 +13,10 @@ import {
 	TextInput
 } from '@mantine/core'
 import { Trash } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { trpc } from '~c/trpc'
+import { useContactStore } from '../../stores/useContactStore'
 
 interface ContactFormDrawerProps {
 	opened: boolean
@@ -25,74 +26,48 @@ interface ContactFormDrawerProps {
 	contactId?: string
 }
 
-interface AddressForm {
-	id?: string
-	receiver: string
-	address_line1: string
-	address_line2: string
-	address_line3: string
-	address_line4: string
-	postcode: string
-	city: string
-	state: string
-	country: string
-	is_default_billing: boolean
-	is_default_shipping: boolean
-}
-
-const EMPTY_ADDRESS: AddressForm = {
-	receiver: '',
-	address_line1: '',
-	address_line2: '',
-	address_line3: '',
-	address_line4: '',
-	postcode: '',
-	city: '',
-	state: '',
-	country: '',
-	is_default_billing: false,
-	is_default_shipping: false
-}
-
 export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId }: ContactFormDrawerProps) {
 	const utils = trpc.useUtils()
 
-	const [formData, setFormData] = useState({
-		company_name: '',
-		person_incharge: '',
-		primary_phone: '',
-		email: '',
-		phone_alt_1: '',
-		phone_alt_2: '',
-		phone_alt_3: '',
-		is_supplier: false
-	})
+	// Get all state and actions from shared contact store
+	const {
+		formData: contactFormData,
+		formAddresses: contactFormAddresses,
+		formLoading: contactFormLoading,
+		setFormData: setContactFormData,
+		updateFormAddress: updateContactFormAddress,
+		addFormAddress: addContactFormAddress,
+		removeFormAddress: removeContactFormAddress,
+		resetForm: resetContactForm,
+		loadContactForEdit,
+		setFormLoading: setContactFormLoading
+	} = useContactStore()
 
-	const [addresses, setAddresses] = useState<AddressForm[]>([{ ...EMPTY_ADDRESS }])
-
-	// Load contact data for edit mode - only when drawer is open and in edit mode
+	// Load contact data for edit mode
 	const { data: contactsData } = trpc.contacts.list.useQuery(
-		{ search: '', page: 1, limit: 1000, isActive: true },
+		{ isActive: true },
 		{ 
 			enabled: opened && mode === 'edit' && !!contactId,
-			staleTime: 30000 // Cache for 30 seconds to reduce requests
+			staleTime: 30000
 		}
 	)
 
-	// Load addresses for edit mode - only when drawer is open and in edit mode
+	// Load addresses for edit mode
 	const { data: addressesData } = trpc.contacts.getAddresses.useQuery(
 		{ contactId: contactId || '' },
 		{ 
 			enabled: opened && mode === 'edit' && !!contactId,
-			staleTime: 30000 // Cache for 30 seconds to reduce requests
+			staleTime: 30000
 		}
 	)
 
 	// Mutations
 	const createMutation = trpc.contacts.create.useMutation({
 		onSuccess: async (data) => {
+			setContactFormLoading(true)
+			
 			// Save valid addresses
-			const validAddresses = addresses.filter(
+			const validAddresses = contactFormAddresses.filter(
 				(addr) =>
 					addr.receiver &&
 					addr.address_line1 &&
@@ -107,16 +82,23 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 			}
 
 			utils.contacts.list.invalidate()
+			utils.contacts.getAddresses.invalidate()
+			setContactFormLoading(false)
 			onSuccess(data.id)
+		},
+		onError: () => {
+			setContactFormLoading(false)
 		}
 	})
 
 	const updateMutation = trpc.contacts.update.useMutation({
 		onSuccess: async () => {
 			if (!contactId) return
+			
+			setContactFormLoading(true)
 
 			// Save valid addresses
-			const validAddresses = addresses.filter(
+			const validAddresses = contactFormAddresses.filter(
 				(addr) =>
 					addr.receiver &&
 					addr.address_line1 &&
@@ -150,7 +132,11 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 
 			utils.contacts.list.invalidate()
 			utils.contacts.getAddresses.invalidate()
+			setContactFormLoading(false)
 			onSuccess(contactId)
+		},
+		onError: () => {
+			setContactFormLoading(false)
 		}
 	})
 
@@ -158,133 +144,55 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 	const updateAddressMutation = trpc.contacts.updateAddress.useMutation()
 	const deleteAddressMutation = trpc.contacts.deleteAddress.useMutation()
 
-	// Initialize clean state when drawer opens
+	// Initialize form when drawer opens
 	useEffect(() => {
 		if (opened) {
 			if (mode === 'create') {
-				// Always start with clean state for create mode
-				setFormData({
-					company_name: '',
-					person_incharge: '',
-					primary_phone: '',
-					email: '',
-					phone_alt_1: '',
-					phone_alt_2: '',
-					phone_alt_3: '',
-					is_supplier: false
-				})
-				setAddresses([{ ...EMPTY_ADDRESS }])
-			}
-			// Edit mode data will be loaded by separate useEffects below
-		}
-	}, [opened, mode])
-
-	// Load existing contact data for edit mode only
-	useEffect(() => {
-		if (opened && mode === 'edit' && contactId && contactsData) {
-			const contact = contactsData.contacts.find((c) => c.id === contactId)
-			if (contact) {
-				setFormData({
-					company_name: contact.company_name,
-					person_incharge: contact.person_incharge,
-					primary_phone: contact.primary_phone,
-					email: contact.email || '',
-					phone_alt_1: contact.phone_alt_1 || '',
-					phone_alt_2: contact.phone_alt_2 || '',
-					phone_alt_3: contact.phone_alt_3 || '',
-					is_supplier: contact.is_supplier
-				})
+				resetContactForm()
+			} else if (mode === 'edit' && contactId && contactsData && addressesData) {
+				// Load contact data from the query result
+				const contact = contactsData.contacts.find(c => c.id === contactId)
+				if (contact) {
+					console.log('Loading contact for edit:', { contact, addressesData })
+					loadContactForEdit(contact, addressesData)
+				}
 			}
 		}
-	}, [opened, mode, contactId, contactsData])
-
-	// Load existing addresses for edit mode only
-	useEffect(() => {
-		if (opened && mode === 'edit' && contactId && addressesData) {
-			if (addressesData.length > 0) {
-				setAddresses(
-					addressesData.map((addr: any) => ({
-						id: addr.id,
-						receiver: addr.receiver,
-						address_line1: addr.address_line1,
-						address_line2: addr.address_line2 || '',
-						address_line3: addr.address_line3 || '',
-						address_line4: addr.address_line4 || '',
-						postcode: addr.postcode,
-						city: addr.city,
-						state: addr.state,
-						country: addr.country,
-						is_default_billing: Boolean(addr.is_default_billing),
-						is_default_shipping: Boolean(addr.is_default_shipping)
-					}))
-				)
-			} else {
-				setAddresses([{ ...EMPTY_ADDRESS }])
-			}
-		}
-	}, [opened, mode, contactId, addressesData])
+	}, [opened, mode, contactId, contactsData, addressesData, resetContactForm, loadContactForEdit])
 
 	const handleSubmit = async () => {
 		if (mode === 'create') {
-			toast.promise(createMutation.mutateAsync(formData), {
-				loading: 'Saving...',
-				success: 'Contact created',
-				error: 'Could not save'
+			toast.promise(createMutation.mutateAsync(contactFormData), {
+				loading: 'Creating contact...',
+				success: 'Contact created successfully',
+				error: 'Failed to create contact'
 			})
 		} else if (contactId) {
-			toast.promise(updateMutation.mutateAsync({ id: contactId, ...formData }), {
-				loading: 'Saving...',
-				success: 'Contact updated',
-				error: 'Could not save'
+			toast.promise(updateMutation.mutateAsync({ id: contactId, ...contactFormData }), {
+				loading: 'Updating contact...',
+				success: 'Contact updated successfully',
+				error: 'Failed to update contact'
 			})
 		}
 	}
 
-	const updateAddress = (index: number, field: keyof AddressForm, value: string | boolean) => {
-		const updated = [...addresses]
-		updated[index] = { ...updated[index], [field]: value }
-
-		// Handle default toggles
-		if (field === 'is_default_billing' && value) {
-			updated.forEach((addr, i) => {
-				if (i !== index) addr.is_default_billing = false
-			})
-		}
-		if (field === 'is_default_shipping' && value) {
-			updated.forEach((addr, i) => {
-				if (i !== index) addr.is_default_shipping = false
-			})
-		}
-
-		setAddresses(updated)
-	}
-
-	const addEmptyAddress = () => {
-		setAddresses([...addresses, { ...EMPTY_ADDRESS }])
-	}
-
-	const removeAddress = async (index: number) => {
-		const addr = addresses[index]
-
-		if (addresses.length === 1) {
-			setAddresses([{ ...EMPTY_ADDRESS }])
-			return
-		}
+	const handleRemoveAddress = async (index: number) => {
+		const addr = contactFormAddresses[index]
 
 		if (addr.id) {
 			await deleteAddressMutation.mutateAsync(addr.id)
 			utils.contacts.getAddresses.invalidate()
 		}
-		setAddresses(addresses.filter((_, i) => i !== index))
+		
+		removeContactFormAddress(index)
 	}
 
-	const isLoading = createMutation.isPending || updateMutation.isPending
+	const isLoading = createMutation.isPending || updateMutation.isPending || contactFormLoading
 	const canSubmit =
-		formData.company_name &&
-		formData.person_incharge &&
-		formData.primary_phone &&
+		contactFormData.company_name &&
+		contactFormData.person_incharge &&
+		contactFormData.primary_phone &&
 		!isLoading
-		// Address validation removed - addresses are optional for contact creation
 
 	return (
 		<Drawer
@@ -308,24 +216,24 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 						<TextInput
 							label='Company Name'
 							placeholder='Enter company name'
-							value={formData.company_name}
-							onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+							value={contactFormData.company_name}
+							onChange={(e) => setContactFormData({ company_name: e.target.value })}
 							required
 						/>
 
 						<TextInput
 							label='Person In Charge'
 							placeholder='Enter person in charge'
-							value={formData.person_incharge}
-							onChange={(e) => setFormData({ ...formData, person_incharge: e.target.value })}
+							value={contactFormData.person_incharge}
+							onChange={(e) => setContactFormData({ person_incharge: e.target.value })}
 							required
 						/>
 
 						<TextInput
 							label='Primary Phone'
 							placeholder='Enter primary phone'
-							value={formData.primary_phone}
-							onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
+							value={contactFormData.primary_phone}
+							onChange={(e) => setContactFormData({ primary_phone: e.target.value })}
 							required
 						/>
 
@@ -333,52 +241,52 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 							label='Email'
 							placeholder='Enter email (optional)'
 							type='email'
-							value={formData.email}
-							onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+							value={contactFormData.email}
+							onChange={(e) => setContactFormData({ email: e.target.value })}
 						/>
 
 						<TextInput
 							label='Alternative Phone 1'
 							placeholder='Enter alternative phone 1 (optional)'
-							value={formData.phone_alt_1}
-							onChange={(e) => setFormData({ ...formData, phone_alt_1: e.target.value })}
+							value={contactFormData.phone_alt_1}
+							onChange={(e) => setContactFormData({ phone_alt_1: e.target.value })}
 						/>
 
 						<TextInput
 							label='Alternative Phone 2'
 							placeholder='Enter alternative phone 2 (optional)'
-							value={formData.phone_alt_2}
-							onChange={(e) => setFormData({ ...formData, phone_alt_2: e.target.value })}
+							value={contactFormData.phone_alt_2}
+							onChange={(e) => setContactFormData({ phone_alt_2: e.target.value })}
 						/>
 
 						<TextInput
 							label='Alternative Phone 3'
 							placeholder='Enter alternative phone 3 (optional)'
-							value={formData.phone_alt_3}
-							onChange={(e) => setFormData({ ...formData, phone_alt_3: e.target.value })}
+							value={contactFormData.phone_alt_3}
+							onChange={(e) => setContactFormData({ phone_alt_3: e.target.value })}
 						/>
 
 						<Switch
 							label='Is Supplier'
 							description='Toggle on for Supplier, off for Client'
-							checked={formData.is_supplier}
-							onChange={(e) => setFormData({ ...formData, is_supplier: e.currentTarget.checked })}
+							checked={contactFormData.is_supplier}
+							onChange={(e) => setContactFormData({ is_supplier: e.currentTarget.checked })}
 						/>
 					</Stack>
 
 					{/* Addresses */}
 					<Stack mt='xl'>
-						{addresses.map((address, index) => (
+						{contactFormAddresses.map((address, index) => (
 							<Paper key={index} p='md' withBorder>
 								<Group justify='space-between' mb='md'>
 									<Text fw={500}>Address {index + 1}</Text>
-									{addresses.length > 1 && (
+									{contactFormAddresses.length > 1 && (
 										<Button
 											size='xs'
 											color='red'
 											variant='subtle'
 											leftSection={<Trash size={14} />}
-											onClick={() => removeAddress(index)}
+											onClick={() => handleRemoveAddress(index)}
 										>
 											Remove
 										</Button>
@@ -390,7 +298,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 										label='Receiver'
 										placeholder='Enter receiver name'
 										value={address.receiver}
-										onChange={(e) => updateAddress(index, 'receiver', e.target.value)}
+										onChange={(e) => updateContactFormAddress(index, 'receiver', e.target.value)}
 										required
 									/>
 
@@ -398,7 +306,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 										label='Address Line 1'
 										placeholder='Enter address line 1'
 										value={address.address_line1}
-										onChange={(e) => updateAddress(index, 'address_line1', e.target.value)}
+										onChange={(e) => updateContactFormAddress(index, 'address_line1', e.target.value)}
 										required
 									/>
 
@@ -406,21 +314,21 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 										label='Address Line 2'
 										placeholder='Enter address line 2 (optional)'
 										value={address.address_line2}
-										onChange={(e) => updateAddress(index, 'address_line2', e.target.value)}
+										onChange={(e) => updateContactFormAddress(index, 'address_line2', e.target.value)}
 									/>
 
 									<TextInput
 										label='Address Line 3'
 										placeholder='Enter address line 3 (optional)'
 										value={address.address_line3}
-										onChange={(e) => updateAddress(index, 'address_line3', e.target.value)}
+										onChange={(e) => updateContactFormAddress(index, 'address_line3', e.target.value)}
 									/>
 
 									<TextInput
 										label='Address Line 4'
 										placeholder='Enter address line 4 (optional)'
 										value={address.address_line4}
-										onChange={(e) => updateAddress(index, 'address_line4', e.target.value)}
+										onChange={(e) => updateContactFormAddress(index, 'address_line4', e.target.value)}
 									/>
 
 									<Group grow>
@@ -428,7 +336,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 											label='Postcode'
 											placeholder='Enter postcode'
 											value={address.postcode}
-											onChange={(e) => updateAddress(index, 'postcode', e.target.value)}
+											onChange={(e) => updateContactFormAddress(index, 'postcode', e.target.value)}
 											required
 										/>
 
@@ -436,7 +344,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 											label='City'
 											placeholder='Enter city'
 											value={address.city}
-											onChange={(e) => updateAddress(index, 'city', e.target.value)}
+											onChange={(e) => updateContactFormAddress(index, 'city', e.target.value)}
 											required
 										/>
 									</Group>
@@ -446,7 +354,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 											label='State'
 											placeholder='Enter state'
 											value={address.state}
-											onChange={(e) => updateAddress(index, 'state', e.target.value)}
+											onChange={(e) => updateContactFormAddress(index, 'state', e.target.value)}
 											required
 										/>
 
@@ -454,7 +362,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 											label='Country'
 											placeholder='Enter country'
 											value={address.country}
-											onChange={(e) => updateAddress(index, 'country', e.target.value)}
+											onChange={(e) => updateContactFormAddress(index, 'country', e.target.value)}
 											required
 										/>
 									</Group>
@@ -464,7 +372,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 											label='Default Billing'
 											checked={address.is_default_billing}
 											onChange={(e) =>
-												updateAddress(index, 'is_default_billing', e.currentTarget.checked)
+												updateContactFormAddress(index, 'is_default_billing', e.currentTarget.checked)
 											}
 										/>
 
@@ -472,7 +380,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 											label='Default Shipping'
 											checked={address.is_default_shipping}
 											onChange={(e) =>
-												updateAddress(index, 'is_default_shipping', e.currentTarget.checked)
+												updateContactFormAddress(index, 'is_default_shipping', e.currentTarget.checked)
 											}
 										/>
 									</Group>
@@ -480,7 +388,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 							</Paper>
 						))}
 
-						<Button variant='light' onClick={addEmptyAddress}>
+						<Button variant='light' onClick={addContactFormAddress}>
 							+ Address
 						</Button>
 					</Stack>

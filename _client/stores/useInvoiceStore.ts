@@ -33,20 +33,8 @@ interface SelectedContact {
 	shippingAddress?: ContactAddress
 }
 
-interface Contact {
-	id: string
-	name: string
-	company_name: string
-	person_incharge: string
-	primary_phone: string
-	email: string | null
-	phone_alt_1: string | null
-	phone_alt_2: string | null
-	phone_alt_3: string | null
-	is_supplier: boolean
-	is_active: boolean
-	createdAt: Date
-}
+// Import shared interfaces from contact store
+import type { Contact, ContactFormData, AddressForm } from './useContactStore'
 
 interface InvoiceFormState {
 	// Form data
@@ -63,6 +51,7 @@ interface InvoiceFormState {
 	contactSelectorSearch: string
 	contactSelectorDropdownOpen: boolean
 	allContacts: Contact[]
+	
 	
 	// Drawer state
 	contactDrawer: {
@@ -91,6 +80,7 @@ interface InvoiceFormState {
 	toggleContactSelectorDropdown: () => void
 	selectContact: (contactId: string) => void
 	
+	
 	// Drawer actions
 	openContactDrawer: (mode: 'create' | 'edit', contactId?: string) => void
 	closeContactDrawer: () => void
@@ -99,6 +89,7 @@ interface InvoiceFormState {
 	resetForm: () => void
 	loadInvoice: (invoice: any) => void
 }
+
 
 const initialState = {
 	contactId: '',
@@ -160,6 +151,7 @@ export const useInvoiceStore = create<InvoiceFormState>()(
 				contactSelectorDropdownOpen: false,
 				contactSelectorSearch: ''
 			})),
+			
 			
 			// Drawer management
 			openContactDrawer: (mode, contactId) => set({

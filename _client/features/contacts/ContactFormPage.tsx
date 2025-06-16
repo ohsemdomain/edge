@@ -11,7 +11,11 @@ import {
 	TextInput
 } from '@mantine/core'
 import { Trash } from 'lucide-react'
-import { useContactForm } from './useContactForm'
+import { useContactStore } from '../../stores/useContactStore'
+import { useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { trpc } from '~c/trpc'
+import toast from 'react-hot-toast'
 
 interface ContactFormPageProps {
 	mode: 'create' | 'edit'
@@ -19,18 +23,150 @@ interface ContactFormPageProps {
 }
 
 export function ContactFormPage({ mode, onSuccess }: ContactFormPageProps) {
+	const navigate = useNavigate()
+	const { id: contactId } = useParams()
+	const utils = trpc.useUtils()
+
+	// Get state and actions from shared contact store
 	const {
 		formData,
+		formAddresses: addresses,
+		formLoading,
+		formMode,
+		contacts,
 		setFormData,
-		addresses,
-		updateAddress,
-		addEmptyAddress,
-		removeAddress,
-		handleSubmit,
-		handleCancel,
-		isLoading,
-		canSubmit
-	} = useContactForm(mode, onSuccess)
+		updateFormAddress: updateAddress,
+		addFormAddress: addEmptyAddress,
+		removeFormAddress: removeAddress,
+		resetForm,
+		loadContactForEdit,
+		setFormLoading,
+		setFormMode
+	} = useContactStore()
+
+	// Load addresses for edit mode
+	const { data: addressesData } = trpc.contacts.getAddresses.useQuery(
+		{ contactId: contactId || '' },
+		{ enabled: mode === 'edit' && !!contactId }
+	)
+
+	// Mutations
+	const createMutation = trpc.contacts.create.useMutation({
+		onSuccess: async (data) => {
+			setFormLoading(true)
+			
+			// Save valid addresses
+			const validAddresses = addresses.filter(
+				(addr) => addr.receiver && addr.address_line1 && addr.postcode && addr.city && addr.state && addr.country
+			)
+
+			for (const addr of validAddresses) {
+				await addAddressMutation.mutateAsync({ ...addr, contactId: data.id })
+			}
+
+			utils.contacts.list.invalidate()
+			setFormLoading(false)
+			
+			if (onSuccess) {
+				onSuccess(data.id)
+			} else {
+				navigate(`/contacts?id=${data.id}`)
+			}
+		}
+	})
+
+	const updateMutation = trpc.contacts.update.useMutation({
+		onSuccess: async () => {
+			if (!contactId) return
+			setFormLoading(true)
+
+			// Save valid addresses  
+			const validAddresses = addresses.filter(
+				(addr) => addr.receiver && addr.address_line1 && addr.postcode && addr.city && addr.state && addr.country
+			)
+
+			for (const addr of validAddresses) {
+				if (addr.id) {
+					await updateAddressMutation.mutateAsync({
+						id: addr.id,
+						contactId,
+						receiver: addr.receiver,
+						address_line1: addr.address_line1,
+						address_line2: addr.address_line2,
+						address_line3: addr.address_line3,
+						address_line4: addr.address_line4,
+						postcode: addr.postcode,
+						city: addr.city,
+						state: addr.state,
+						country: addr.country,
+						is_default_billing: addr.is_default_billing,
+						is_default_shipping: addr.is_default_shipping
+					})
+				} else {
+					await addAddressMutation.mutateAsync({ ...addr, contactId })
+				}
+			}
+
+			utils.contacts.list.invalidate()
+			utils.contacts.getAddresses.invalidate()
+			setFormLoading(false)
+			navigate(`/contacts?id=${contactId}`)
+		}
+	})
+
+	const addAddressMutation = trpc.contacts.addAddress.useMutation()
+	const updateAddressMutation = trpc.contacts.updateAddress.useMutation()
+	const deleteAddressMutation = trpc.contacts.deleteAddress.useMutation()
+
+	// Initialize form when component mounts
+	useEffect(() => {
+		setFormMode(mode)
+		if (mode === 'create') {
+			resetForm()
+		} else if (mode === 'edit' && contactId) {
+			const contact = contacts.find(c => c.id === contactId)
+			if (contact && addressesData) {
+				loadContactForEdit(contact, addressesData)
+			}
+		}
+	}, [mode, contactId, contacts, addressesData, resetForm, loadContactForEdit, setFormMode])
+
+	const handleSubmit = async () => {
+		if (mode === 'create') {
+			toast.promise(createMutation.mutateAsync(formData), {
+				loading: 'Creating contact...',
+				success: 'Contact created successfully',
+				error: 'Failed to create contact'
+			})
+		} else if (contactId) {
+			toast.promise(updateMutation.mutateAsync({ id: contactId, ...formData }), {
+				loading: 'Updating contact...',
+				success: 'Contact updated successfully',
+				error: 'Failed to update contact'
+			})
+		}
+	}
+
+	const handleRemoveAddress = async (index: number) => {
+		const addr = addresses[index]
+		if (addr.id) {
+			await deleteAddressMutation.mutateAsync(addr.id)
+			utils.contacts.getAddresses.invalidate()
+		}
+		removeAddress(index)
+	}
+
+	const handleCancel = () => {
+		if (onSuccess) {
+			// Close modal/drawer if in invoice context
+			window.dispatchEvent(new Event('closeContactModal'))
+		} else {
+			navigate('/contacts')
+		}
+	}
+
+	const isLoading = createMutation.isPending || updateMutation.isPending || formLoading
+	const canSubmit = formData.company_name && formData.person_incharge && formData.primary_phone && !isLoading
 
 	return (
 		<ScrollArea h='100%' type='never'>
@@ -110,7 +246,7 @@ export function ContactFormPage({ mode, onSuccess }: ContactFormPageProps) {
 											color='red'
 											variant='subtle'
 											leftSection={<Trash size={14} />}
-											onClick={() => removeAddress(index)}
+											onClick={() => handleRemoveAddress(index)}
 										>
 											Remove
 										</Button>

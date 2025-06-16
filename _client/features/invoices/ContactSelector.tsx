@@ -4,7 +4,7 @@ import { useClickOutside } from '@mantine/hooks'
 import { ChevronDown, Plus, Search } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { trpc } from '~c/trpc'
-import { useInvoiceStore } from './useInvoiceStore'
+import { useInvoiceStore } from '../../stores/useInvoiceStore'
 
 interface ContactSelectorProps {
 	value: string
@@ -54,12 +54,10 @@ export function ContactSelector({
 
 	// Update store when contacts load
 	useEffect(() => {
-		if (contactsData?.contacts) {
+		if (contactsData?.contacts && contactsData.contacts.length > 0) {
 			setAllContacts(contactsData.contacts)
 		}
 	}, [contactsData, setAllContacts])
-
-	const selectedContact = allContacts.find((c) => c.id === value)
 
 	// Handle external force close
 	useEffect(() => {
@@ -80,11 +78,22 @@ export function ContactSelector({
 		onChange(contactId)
 	}
 
+	// Use data from query if store is empty, otherwise use store
+	const contactsToUse = allContacts.length > 0 ? allContacts : (contactsData?.contacts || [])
+	const selectedContact = contactsToUse.find((c) => c.id === value)
+	
+	// Update store immediately if it's empty but we have query data
+	useEffect(() => {
+		if (allContacts.length === 0 && contactsData?.contacts && contactsData.contacts.length > 0) {
+			setAllContacts(contactsData.contacts)
+		}
+	}, [allContacts.length, contactsData, setAllContacts])
+	
 	// Filter contacts based on search
 	const filteredContacts =
 		contactSelectorSearch.trim() === ''
-			? allContacts
-			: allContacts.filter((contact) => {
+			? contactsToUse
+			: contactsToUse.filter((contact) => {
 					const search = contactSelectorSearch.toLowerCase()
 					return (
 						contact.name?.toLowerCase().includes(search) ||
@@ -159,9 +168,9 @@ export function ContactSelector({
 					{/* Middle Row - Contact List */}
 					<Box style={{ flex: 1, overflow: 'hidden' }}>
 						<ScrollArea h='100%' type='scroll'>
-							{isLoading ? (
+							{isLoading || (contactsToUse.length === 0) ? (
 								<Text size='sm' c='dimmed' ta='center' p='xl'>
-									Loading...
+									Loading contacts...
 								</Text>
 							) : filteredContacts.length > 0 ? (
 								<Box>

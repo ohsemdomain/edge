@@ -28,17 +28,18 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 
 	// Client-side filter
 	const filteredInvoices = search
-		? data?.invoices?.filter((invoice) => 
-			invoice.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-			invoice.contact_name.toLowerCase().includes(search.toLowerCase())
-		) || []
+		? data?.invoices?.filter(
+				(invoice) =>
+					invoice.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
+					invoice.contact_name.toLowerCase().includes(search.toLowerCase())
+			) || []
 		: data?.invoices || []
 
 	// Virtual scrolling
 	const virtualizer = useVirtualizer({
 		count: filteredInvoices.length,
 		getScrollElement: () => parentRef.current,
-		estimateSize: () => 90, // Estimated height of each item in pixels
+		estimateSize: () => 75, // Estimated height of each item in pixels
 		overscan: 10 // Render 10 extra items outside viewport
 	})
 
@@ -127,12 +128,11 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 									left: 0,
 									width: '100%',
 									height: `${virtualItem.size}px`,
-									transform: `translateY(${virtualItem.start}px)`,
-									paddingBottom: '8px'
+									transform: `translateY(${virtualItem.start}px)`
 								}}
 							>
 								<Card
-									padding='sm'
+									padding='md'
 									radius={0}
 									withBorder
 									onClick={() => onSelect(invoice.id)}
@@ -140,49 +140,36 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 										cursor: 'pointer',
 										backgroundColor:
 											selectedId === invoice.id ? 'var(--mantine-color-gray-1)' : undefined,
-										borderColor: selectedId === invoice.id ? 'var(--mantine-color-gray-4)' : undefined
+										borderColor:
+											selectedId === invoice.id ? 'var(--mantine-color-gray-4)' : undefined
 									}}
 								>
-									<Group justify='space-between' align='start' mb='xs'>
-										<div>
-											<Text fw={600} size='sm'>
-												{invoice.invoice_number}
-											</Text>
-											<Text size='xs' c='dimmed'>
-												{formatDateForDisplay(new Date(invoice.invoiceDate))}
-											</Text>
-										</div>
-										<Badge
-											color={getStatusBadge(invoice.status)}
-											size='sm'
-											variant='light'
-										>
-											{invoice.status}
-										</Badge>
-									</Group>
-									<Group justify='space-between' align='center'>
-										<div style={{ flex: 1 }}>
-											<Text size='sm' truncate>
+									<Stack gap={1}>
+										<Group justify='space-between'>
+											<Text size='md' fw={500} truncate style={{ maxWidth: '200px' }}>
 												{invoice.contact_name}
 											</Text>
-											<Text className='geist' size='xs' c='dimmed'>
-												{invoice.id}
-											</Text>
-										</div>
-										<div style={{ textAlign: 'right' }}>
-											<Text size='sm' fw={500}>
+											<Text className='geist' size='sm' fw={500}>
 												{formatCurrency(invoice.total)}
 											</Text>
-											<Text
-												size='xs'
-												c={invoice.contactBalance > 0 ? 'red' : 'green'}
-												fw={500}
-											>
-												{invoice.contactBalance > 0 ? 'Owes: ' : 'Credit: '}
-												{formatCurrency(Math.abs(invoice.contactBalance))}
+										</Group>
+										<Group justify='space-between'>
+											<Group gap='xs' align='center'>
+												<Text size='xs' c='dimmed'>
+													{invoice.invoice_number}
+												</Text>
+												<Text size='xs' c='dimmed'>
+													•
+												</Text>
+												<Text size='xs' c='dimmed'>
+													{formatDateForDisplay(new Date(invoice.invoiceDate))}
+												</Text>
+											</Group>
+											<Text size='10px' c={getStatusBadge(invoice.status)} fw={500}>
+												{invoice.status.toUpperCase()}
 											</Text>
-										</div>
-									</Group>
+										</Group>
+									</Stack>
 								</Card>
 							</div>
 						)

@@ -10,7 +10,7 @@ import { AddressDisplay } from './AddressDisplay'
 import { ContactFormDrawer } from './ContactFormDrawer'
 import { ContactSelector } from './ContactSelector'
 import { InvoiceItems } from './InvoiceItems'
-import { useInvoiceStore } from './useInvoiceStore'
+import { useInvoiceStore } from '../../stores/useInvoiceStore'
 
 interface InvoiceFormPageProps {
 	mode: 'create' | 'edit'
@@ -48,10 +48,8 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 		{ enabled: !!contactId }
 	)
 
-	// Load all contacts to find selected contact details
-	const { data: contactsData } = trpc.contacts.list.useQuery({
-		isActive: true
-	})
+	// Get contacts from the store (loaded by ContactSelector)
+	const { allContacts: contactsData } = useInvoiceStore()
 
 	// Load invoice data for edit mode
 	const { data: invoice } = trpc.invoices.getById.useQuery(
@@ -75,8 +73,8 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 
 	// Update selected contact when contact changes
 	useEffect(() => {
-		if (contactId && contactsData && addressesData) {
-			const contact = contactsData.contacts.find(c => c.id === contactId)
+		if (contactId && contactsData && contactsData.length > 0 && addressesData) {
+			const contact = contactsData.find(c => c.id === contactId)
 			if (contact) {
 				const billingAddress = addressesData.find(addr => addr.is_default_billing)
 				const shippingAddress = addressesData.find(addr => addr.is_default_shipping)
