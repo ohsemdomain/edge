@@ -255,7 +255,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 													<Table.Tr key={payment.id}>
 														<Table.Td>
 															<Text size='sm'>
-																{formatDateForDisplay(new Date(payment.paymentDate))}
+																{formatDateForDisplay(new Date(payment.payment_date * 1000))}
 															</Text>
 														</Table.Td>
 														<Table.Td>

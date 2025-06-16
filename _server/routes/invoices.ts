@@ -25,7 +25,7 @@ async function generateInvoiceNumber(DB: any): Promise<string> {
 		return `${prefix}0001`
 	}
 	
-	const lastNumber = parseInt((results[0] as any).invoice_number.slice(-4)) || 0
+	const lastNumber = Number.parseInt((results[0] as any).invoice_number.slice(-4)) || 0
 	const nextNumber = lastNumber + 1
 	return `${prefix}${nextNumber.toString().padStart(4, '0')}`
 }
@@ -127,103 +127,79 @@ export const invoicesRouter = router({
 			}
 		}),
 
-	getById: publicProcedure
-		.input(z.object({ id: z.string() }))
-		.query(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-			const { id } = input
+getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input, ctx }) => {
+        const { DB } = ctx.env
+        const { id } = input
 
-			// Get invoice with contact details
-			const { results } = await DB.prepare(`
-				SELECT 
-					i.*,
-					c.name as contact_name,
-					c.email as contact_email,
-					c.phone as contact_phone
-				FROM invoices i
-				LEFT JOIN contacts c ON i.contact_id = c.id
-				WHERE i.id = ?
-			`)
-				.bind(id)
-				.all()
+        // Get invoice with contact details
+        const invoice = await DB.prepare(`
+            SELECT 
+                i.*,
+                c.company_name as contact_name,
+                c.email as contact_email,
+                c.primary_phone as contact_phone
+            FROM invoices i
+            LEFT JOIN contacts c ON i.contact_id = c.id
+            WHERE i.id = ?
+        `)
+            .bind(id)
+            .first()
 
-			if (results.length === 0) {
-				throw new Error('Invoice not found')
-			}
+        if (!invoice) {
+            throw new Error('Invoice not found')
+        }
 
-			const invoice = results[0] as any
+        // Get invoice items
+        const { results: items } = await DB.prepare(`
+            SELECT 
+                ii.*,
+                i.name as item_name
+            FROM invoice_items ii
+            LEFT JOIN items i ON ii.item_id = i.id
+            WHERE ii.invoice_id = ?
+        `)
+            .bind(id)
+            .all()
 
-			// Get invoice items
-			const { results: items } = await DB.prepare(`
-				SELECT 
-					ii.*,
-					i.name as item_name
-				FROM invoice_items ii
-				LEFT JOIN items i ON ii.item_id = i.id
-				WHERE ii.invoice_id = ?
-			`)
-				.bind(id)
-				.all()
+        // Get payments
+        const { results: payments } = await DB.prepare(`
+            SELECT * FROM payments
+            WHERE invoice_id = ?
+            ORDER BY payment_date DESC
+        `)
+            .bind(id)
+            .all()
 
-			// Get payments
-			const { results: payments } = await DB.prepare(`
-				SELECT * FROM payments
-				WHERE invoice_id = ?
-				ORDER BY payment_date DESC
-			`)
-				.bind(id)
-				.all()
+        // Calculate totals
+        const total = items.reduce((sum, item: any) => sum + (item.quantity * item.unit_price), 0)
+        const paidAmount = payments.reduce((sum, payment: any) => sum + payment.amount, 0)
 
-			// Calculate totals
-			const total = items.reduce((sum, item: any) => sum + (item.quantity * item.unit_price), 0)
-			const paidAmount = payments.reduce((sum, payment: any) => sum + payment.amount, 0)
+        // Get contact balance (simplified)
+        const contactBalance = total - paidAmount
 
-			// Get contact balance
-			const { results: invoiceTotals } = await DB.prepare(`
-				SELECT 
-					COALESCE(SUM(ii.quantity * ii.unit_price), 0) as total
-				FROM invoices i
-				LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
-				WHERE i.contact_id = ?
-				AND i.is_active = true
-			`)
-				.bind(invoice.contact_id)
-				.all()
+        // Determine status
+        let status = 'unpaid'
+        if (paidAmount >= total) {
+            status = 'paid'
+        } else if (paidAmount > 0) {
+            status = 'partial'
+        }
 
-			const { results: paymentTotals } = await DB.prepare(`
-				SELECT 
-					COALESCE(SUM(p.amount), 0) as total
-				FROM payments p
-				JOIN invoices i ON p.invoice_id = i.id
-				WHERE i.contact_id = ?
-				AND i.is_active = true
-			`)
-				.bind(invoice.contact_id)
-				.all()
-
-			const contactBalance = (invoiceTotals[0] as any).total - (paymentTotals[0] as any).total
-
-			// Determine status
-			let status = 'unpaid'
-			if (paidAmount >= total) {
-				status = 'paid'
-			} else if (paidAmount > 0) {
-				status = 'partial'
-			}
-
-			return {
-				...invoice,
-				items,
-				payments,
-				total,
-				paidAmount,
-				contactBalance,
-				status,
-				invoiceDate: new Date(invoice.invoice_date * 1000),
-				dueDate: invoice.due_date ? new Date(invoice.due_date * 1000) : null,
-				createdAt: new Date(invoice.created_at * 1000)
-			}
-		}),
+        return {
+            ...invoice,
+            items,
+            payments,
+            total,
+            paidAmount,
+            contactBalance,
+            status,
+            invoiceDate: (invoice.invoice_date as number) * 1000, // Convert to milliseconds
+            dueDate: invoice.due_date ? (invoice.due_date as number) * 1000 : null,
+            created_at: (invoice.created_at as number) * 1000
+        }
+    }),
 
 	create: publicProcedure
 		.input(
