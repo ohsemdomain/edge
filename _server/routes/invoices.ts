@@ -5,16 +5,6 @@ import { publicProcedure, router } from '../trpc'
 import { generateShareToken, generateNewShareToken } from '../public-ssr/invoice/link-generator'
 import { getInvoiceById } from '../public-ssr/invoice/data-fetcher'
 
-interface PaymentRow {
-	id: string
-	contact_id: string
-	invoice_id: string | null
-	amount: number
-	payment_date: number
-	payment_method: string | null
-	notes: string | null
-	created_at: number
-}
 
 const archiveInvoicesRouter = createArchiveRouter('invoices')
 
@@ -31,13 +21,13 @@ async function generateInvoiceNumber(DB: any): Promise<string> {
 		 LIMIT 1`
 	)
 		.bind(`${prefix}%`)
-		.all<{ invoice_number: string }>()
+		.all()
 	
 	if (results.length === 0) {
 		return `${prefix}0001`
 	}
 	
-	const lastNumber = parseInt(results[0].invoice_number.slice(-4)) || 0
+	const lastNumber = parseInt((results[0] as any).invoice_number.slice(-4)) || 0
 	const nextNumber = lastNumber + 1
 	return `${prefix}${nextNumber.toString().padStart(4, '0')}`
 }
@@ -127,7 +117,7 @@ export const invoicesRouter = router({
 			}
 
 			return {
-				invoices: invoices.map((invoice) => ({
+				invoices: invoices.map((invoice: any) => ({
 					...invoice,
 					createdAt: new Date(invoice.created_at * 1000),
 					invoiceDate: new Date(invoice.invoice_date * 1000),

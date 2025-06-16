@@ -94,7 +94,7 @@ export function PaymentModal({ opened, onClose, contactId, invoiceId, onSuccess 
 				<DateInput
 					label='Payment Date'
 					value={paymentDate}
-					onChange={setPaymentDate}
+					onChange={(date) => setPaymentDate(date && typeof date === 'object' ? date as Date : (date ? new Date(date) : null))}
 					required
 				/>
 

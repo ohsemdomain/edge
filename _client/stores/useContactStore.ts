@@ -15,7 +15,7 @@ export interface Contact {
 	phone_alt_3: string | null
 	is_supplier: boolean
 	is_active: boolean
-	createdAt: Date
+	createdAt: string | Date
 }
 
 export interface ContactFormData {
@@ -74,7 +74,7 @@ interface ContactStore {
 	
 	// Utility actions
 	resetForm: () => void
-	loadContactForEdit: (contact: Contact, addresses: AddressForm[]) => void
+	loadContactForEdit: (contact: Contact, addresses: any[]) => void
 	getContactById: (id: string) => Contact | undefined
 	getFilteredContacts: (searchTerm: string) => Contact[]
 	

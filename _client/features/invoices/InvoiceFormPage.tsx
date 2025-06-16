@@ -4,7 +4,6 @@ import { DateInput } from '@mantine/dates'
 import { useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
-import { formatDateForDisplay } from '~c/lib/formatter'
 import { trpc } from '~c/trpc'
 import { AddressDisplay } from './AddressDisplay'
 import { ContactFormDrawer } from './ContactFormDrawer'
@@ -28,14 +27,12 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 		notes,
 		items,
 		selectedContact,
-		isContactSelectorOpen,
 		contactDrawer,
 		setContactId,
 		setInvoiceDate,
 		setNotes,
 		setItems,
 		setSelectedContact,
-		setContactSelectorOpen,
 		openContactDrawer,
 		closeContactDrawer,
 		resetForm,
@@ -219,7 +216,7 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 						<DateInput
 							label='Invoice Date'
 							value={invoiceDate}
-							onChange={(date) => setInvoiceDate(date || new Date())}
+							onChange={(date) => setInvoiceDate(date && typeof date === 'object' ? date as Date : new Date(date || new Date()))}
 							valueFormat="DD.MM.YYYY"
 							dateParser={(input) => {
 								// Parse custom format DD.MM.YYYY

@@ -25,15 +25,27 @@ export const contactsRouter = router({
 	list: publicProcedure
 		.input(
 			z.object({
+				search: z.string().optional(),
+				page: z.number().default(1),
+				limit: z.number().default(1000),
 				isActive: z.boolean().default(true)
 			})
 		)
 		.query(async ({ input, ctx }) => {
 			const { DB } = ctx.env
-			const { isActive } = input
+			const { search, page, limit, isActive } = input
+			const offset = (page - 1) * limit
 
-			const query = 'SELECT * FROM contacts WHERE is_active = ? ORDER BY created_at DESC'
-			const params: (boolean)[] = [isActive]
+			let query = 'SELECT * FROM contacts WHERE is_active = ?'
+			const params: (string | number | boolean)[] = [isActive]
+
+			if (search) {
+				query += ' AND (company_name LIKE ? OR primary_phone LIKE ?)'
+				params.push(`%${search}%`, `%${search}%`)
+			}
+
+			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
+			params.push(limit, offset)
 
 			const { results } = await DB.prepare(query)
 				.bind(...params)

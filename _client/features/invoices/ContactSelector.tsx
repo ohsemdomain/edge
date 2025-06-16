@@ -1,5 +1,5 @@
 // _client/features/invoices/ContactSelector.tsx
-import { Box, Button, Paper, ScrollArea, Text, TextInput, UnstyledButton } from '@mantine/core'
+import { Box, Paper, ScrollArea, Text, TextInput, UnstyledButton } from '@mantine/core'
 import { useClickOutside } from '@mantine/hooks'
 import { ChevronDown, Plus, Search } from 'lucide-react'
 import { useEffect, useRef } from 'react'

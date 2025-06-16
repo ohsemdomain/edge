@@ -32,7 +32,6 @@ export function ContactFormPage({ mode, onSuccess }: ContactFormPageProps) {
 		formData,
 		formAddresses: addresses,
 		formLoading,
-		formMode,
 		contacts,
 		setFormData,
 		updateFormAddress: updateAddress,

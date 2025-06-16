@@ -211,7 +211,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 											</Table.Tr>
 										</Table.Thead>
 										<Table.Tbody>
-											{invoice.items.map((item) => (
+											{invoice.items.map((item: any) => (
 												<Table.Tr key={item.id}>
 													<Table.Td>
 														<Text size='sm'>{item.description}</Text>
@@ -285,7 +285,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 												</Table.Tr>
 											</Table.Thead>
 											<Table.Tbody>
-												{invoice.payments.map((payment) => (
+												{invoice.payments.map((payment: any) => (
 													<Table.Tr key={payment.id}>
 														<Table.Td>
 															<Text size='sm'>

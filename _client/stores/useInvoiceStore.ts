@@ -34,7 +34,7 @@ interface SelectedContact {
 }
 
 // Import shared interfaces from contact store
-import type { Contact, ContactFormData, AddressForm } from './useContactStore'
+import type { Contact } from './useContactStore'
 
 interface InvoiceFormState {
 	// Form data
@@ -146,7 +146,7 @@ export const useInvoiceStore = create<InvoiceFormState>()(
 				contactSelectorDropdownOpen: !state.contactSelectorDropdownOpen,
 				contactSelectorSearch: !state.contactSelectorDropdownOpen ? '' : state.contactSelectorSearch
 			})),
-			selectContact: (contactId) => set((state) => ({
+			selectContact: (contactId) => set(() => ({
 				contactId,
 				contactSelectorDropdownOpen: false,
 				contactSelectorSearch: ''
