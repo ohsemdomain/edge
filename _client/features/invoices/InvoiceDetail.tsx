@@ -1,7 +1,7 @@
 // _client/features/invoices/InvoiceDetail.tsx
 import { ActionIcon, Badge, Button, Card, Group, Paper, ScrollArea, Stack, Table, Text, Title, Divider } from '@mantine/core'
 import { Archive, Edit, Plus } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { formatDate, formatDateForDisplay, formatCurrency } from '~c/lib/formatter'
@@ -63,7 +63,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 						className='border-b border-gray-200'
 					>
 						<div>
-							<Title order={2}>{invoice.invoice_number}</Title>
+							<Title order={2}>{invoice.invoice_number as string}</Title>
 							<Text c='dimmed' size='sm'>
 								Invoice Details
 							</Text>
@@ -79,7 +79,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							</Button>
 							<Button
 								leftSection={<Edit size={16} />}
-								onClick={() => navigate(`/invoices/edit/${invoice.id}`)}
+								onClick={() => navigate(`/invoices/edit/${invoice.id as string}`)}
 							>
 								Edit
 							</Button>
@@ -89,7 +89,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 								leftSection={<Archive size={16} />}
 								onClick={() => {
 									if (window.confirm('Move this invoice to archive?')) {
-										handleToggleActive(invoice.id, invoice.is_active)
+										handleToggleActive(invoice.id as string, invoice.is_active as boolean)
 									}
 								}}
 								disabled={toggleActiveMutation.isPending}
@@ -135,12 +135,12 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							<div>
 								<Text size='sm' c='dimmed' mb='xs'>Customer</Text>
 								<Card withBorder p='sm'>
-									<Text fw={500}>{invoice.contact_name}</Text>
-									{invoice.contact_email && (
-										<Text size='sm' c='dimmed'>{invoice.contact_email}</Text>
+									<Text fw={500}>{invoice.contact_name as string}</Text>
+									{(invoice.contact_email as string) && (
+										<Text size='sm' c='dimmed'>{invoice.contact_email as string}</Text>
 									)}
-									{invoice.contact_phone && (
-										<Text size='sm' c='dimmed'>{invoice.contact_phone}</Text>
+									{(invoice.contact_phone as string) && (
+										<Text size='sm' c='dimmed'>{invoice.contact_phone as string}</Text>
 									)}
 								</Card>
 							</div>
@@ -149,7 +149,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							<Group grow>
 								<div>
 									<Text size='sm' c='dimmed'>Invoice Number</Text>
-									<Text fw={500} className='geist'>{invoice.invoice_number}</Text>
+									<Text fw={500} className='geist'>{invoice.invoice_number as string}</Text>
 								</div>
 								<div>
 									<Text size='sm' c='dimmed'>Invoice Date</Text>
@@ -216,11 +216,11 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							</div>
 
 							{/* Notes */}
-							{invoice.notes && (
+							{(invoice.notes as string) && (
 								<div>
 									<Text size='sm' c='dimmed' mb='xs'>Notes</Text>
 									<Card withBorder p='sm'>
-										<Text size='sm'>{invoice.notes}</Text>
+										<Text size='sm'>{invoice.notes as string}</Text>
 									</Card>
 								</div>
 							)}
@@ -255,11 +255,11 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 													<Table.Tr key={payment.id}>
 														<Table.Td>
 															<Text size='sm'>
-																{formatDateForDisplay(new Date(payment.payment_date * 1000))}
+																{formatDateForDisplay(new Date(payment.paymentDate))}
 															</Text>
 														</Table.Td>
 														<Table.Td>
-															<Text size='sm'>{payment.payment_method || 'N/A'}</Text>
+															<Text size='sm'>{payment.paymentMethod || 'N/A'}</Text>
 														</Table.Td>
 														<Table.Td ta='right'>
 															<Text size='sm' fw={500} className='geist'>
@@ -289,12 +289,12 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							{/* Metadata */}
 							<div>
 								<Text size='sm' c='dimmed' mb='xs'>Invoice ID</Text>
-								<Text className='geist' size='sm'>{invoice.id}</Text>
+								<Text className='geist' size='sm'>{invoice.id as string}</Text>
 							</div>
 
 							<div>
 								<Text size='sm' c='dimmed' mb='xs'>Created</Text>
-								<Text className='geist' size='sm'>{formatDate(invoice.created_at)}</Text>
+								<Text className='geist' size='sm'>{formatDateForDisplay(new Date(invoice.created_at))}</Text>
 							</div>
 						</Stack>
 					</ScrollArea>
@@ -304,8 +304,8 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 			<PaymentModal
 				opened={paymentModalOpen}
 				onClose={() => setPaymentModalOpen(false)}
-				contactId={invoice.contact_id}
-				invoiceId={invoice.id}
+				contactId={invoice.contact_id as string}
+				invoiceId={invoice.id as string}
 				onSuccess={() => {
 					refetch()
 					setPaymentModalOpen(false)

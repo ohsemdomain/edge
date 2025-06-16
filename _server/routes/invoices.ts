@@ -188,9 +188,20 @@ getById: publicProcedure
         }
 
         return {
-            ...invoice,
+            id: invoice.id,
+            invoice_number: invoice.invoice_number,
+            contact_id: invoice.contact_id,
+            contact_name: invoice.contact_name,
+            contact_email: invoice.contact_email,
+            contact_phone: invoice.contact_phone,
+            notes: invoice.notes,
+            is_active: invoice.is_active,
             items,
-            payments,
+            payments: payments.map((payment: any) => ({
+                ...payment,
+                paymentDate: (payment.payment_date as number) * 1000,
+                paymentMethod: payment.payment_method
+            })),
             total,
             paidAmount,
             contactBalance,
