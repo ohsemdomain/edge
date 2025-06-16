@@ -3,8 +3,8 @@ import { ActionIcon, Badge, Button, Card, Group, Paper, ScrollArea, Stack, Table
 import { Archive, Edit, Plus } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { formatDate, formatDateForDisplay, formatCurrency } from '~c/lib/formatter'
-import { useArchiveActions } from '~c/lib/useArchive'
 import { trpc } from '~c/trpc'
 import { CustomLink } from '~c/components/CustomLink'
 import { PaymentModal } from './PaymentModal'
@@ -15,15 +15,30 @@ interface InvoiceDetailProps {
 
 export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 	const navigate = useNavigate()
+	const utils = trpc.useUtils()
 	const [paymentModalOpen, setPaymentModalOpen] = useState(false)
 	const [shareToken, setShareToken] = useState<string | null>(null)
 
 	const { data: invoice, refetch } = trpc.invoices.getById.useQuery({ id: invoiceId })
 	const generateShareLink = trpc.invoices.generateShareLink.useMutation()
 
-	const { handleToggleActive, isToggling } = useArchiveActions('invoices', () => {
-		navigate('/invoices')
+	const toggleActiveMutation = trpc.invoices.toggleActive.useMutation({
+		onSuccess: () => {
+			navigate('/invoices')
+			utils.invoices.list.invalidate()
+		}
 	})
+
+	const handleToggleActive = (id: string, currentlyActive: boolean) => {
+		const action = currentlyActive ? 'Archiving' : 'Restoring'
+		const actionPast = currentlyActive ? 'archived' : 'restored'
+
+		toast.promise(toggleActiveMutation.mutateAsync({ id }), {
+			loading: `${action}...`,
+			success: `Successfully ${actionPast}`,
+			error: `Could not ${action.toLowerCase()}`
+		})
+	}
 
 	// Generate share link automatically when component loads
 	useEffect(() => {
@@ -108,10 +123,10 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 								leftSection={<Archive size={16} />}
 								onClick={() => {
 									if (window.confirm('Move this invoice to archive?')) {
-										handleToggleActive(invoice.id, true)
+										handleToggleActive(invoice.id, invoice.is_active)
 									}
 								}}
-								disabled={isToggling}
+								disabled={toggleActiveMutation.isPending}
 							>
 								Archive
 							</Button>

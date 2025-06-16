@@ -2,8 +2,8 @@
 import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { formatDate } from '~c/lib/formatter'
-import { useArchiveActions } from '~c/lib/useArchive'
 import { trpc } from '~c/trpc'
 
 interface ItemDetailProps {
@@ -12,17 +12,31 @@ interface ItemDetailProps {
 
 export function ItemDetail({ itemId }: ItemDetailProps) {
 	const navigate = useNavigate()
+	const utils = trpc.useUtils()
 
 	const { data: itemsData } = trpc.items.list.useQuery({
-		search: '',
 		page: 1,
 		limit: 1000,
 		isActive: true
 	})
 
-	const { handleToggleActive, isToggling } = useArchiveActions('items', () => {
-		navigate('/items')
+	const toggleActiveMutation = trpc.items.toggleActive.useMutation({
+		onSuccess: () => {
+			navigate('/items')
+			utils.items.list.invalidate()
+		}
 	})
+
+	const handleToggleActive = (id: string, currentlyActive: boolean) => {
+		const action = currentlyActive ? 'Archiving' : 'Restoring'
+		const actionPast = currentlyActive ? 'archived' : 'restored'
+
+		toast.promise(toggleActiveMutation.mutateAsync({ id }), {
+			loading: `${action}...`,
+			success: `Successfully ${actionPast}`,
+			error: `Could not ${action.toLowerCase()}`
+		})
+	}
 
 	const item = itemsData?.items.find((i) => i.id === itemId)
 
@@ -58,10 +72,10 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							leftSection={<Archive size={16} />}
 							onClick={() => {
 								if (window.confirm('Move this item to archive?')) {
-									handleToggleActive(item.id, true)
+									handleToggleActive(item.id, item.is_active)
 								}
 							}}
-							disabled={isToggling}
+							disabled={toggleActiveMutation.isPending}
 						>
 							Archive
 						</Button>

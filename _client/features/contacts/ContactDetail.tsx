@@ -2,8 +2,8 @@
 import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
 import { Archive, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { formatDate } from '~c/lib/formatter'
-import { useArchiveActions } from '~c/lib/useArchive'
 import { trpc } from '~c/trpc'
 
 interface ContactDetailProps {
@@ -12,9 +12,9 @@ interface ContactDetailProps {
 
 export function ContactDetail({ contactId }: ContactDetailProps) {
 	const navigate = useNavigate()
+	const utils = trpc.useUtils()
 
 	const { data: contactsData } = trpc.contacts.list.useQuery({
-		search: '',
 		page: 1,
 		limit: 1000,
 		isActive: true
@@ -24,9 +24,23 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 		contactId
 	})
 
-	const { handleToggleActive, isToggling } = useArchiveActions('contacts', () => {
-		navigate('/contacts')
+	const toggleActiveMutation = trpc.contacts.toggleActive.useMutation({
+		onSuccess: () => {
+			navigate('/contacts')
+			utils.contacts.list.invalidate()
+		}
 	})
+
+	const handleToggleActive = (id: string, currentlyActive: boolean) => {
+		const action = currentlyActive ? 'Archiving' : 'Restoring'
+		const actionPast = currentlyActive ? 'archived' : 'restored'
+
+		toast.promise(toggleActiveMutation.mutateAsync({ id }), {
+			loading: `${action}...`,
+			success: `Successfully ${actionPast}`,
+			error: `Could not ${action.toLowerCase()}`
+		})
+	}
 
 	const contact = contactsData?.contacts.find((c) => c.id === contactId)
 
@@ -62,10 +76,10 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 							leftSection={<Archive size={16} />}
 							onClick={() => {
 								if (window.confirm('Move this contact to archive?')) {
-									handleToggleActive(contact.id, true)
+									handleToggleActive(contact.id, contact.is_active)
 								}
 							}}
-							disabled={isToggling}
+							disabled={toggleActiveMutation.isPending}
 						>
 							Archive
 						</Button>
