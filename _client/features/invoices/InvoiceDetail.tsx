@@ -3,7 +3,7 @@ import { ActionIcon, Badge, Button, Card, Group, Paper, ScrollArea, Stack, Table
 import { Archive, Edit, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatDate, formatDateForDisplay } from '~c/lib/formatter'
+import { formatDate, formatDateForDisplay, formatCurrency } from '~c/lib/formatter'
 import { useArchiveActions } from '~c/lib/useArchive'
 import { trpc } from '~c/trpc'
 import { PaymentModal } from './PaymentModal'
@@ -22,14 +22,6 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 		navigate('/invoices')
 	})
 
-	const formatCurrency = (amount: number) => {
-		return new Intl.NumberFormat('en-US', {
-			style: 'currency',
-			currency: 'USD',
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2
-		}).format(amount)
-	}
 
 	const getStatusBadge = (status: string) => {
 		const colors = {

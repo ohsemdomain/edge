@@ -63,3 +63,17 @@ export const formatDateForDisplay = (date: Date): string => {
 
 	return `${day}.${month}.${year}`
 }
+
+/**
+ * Format number as Malaysian Ringgit currency
+ * @param amount Number to format as currency
+ * @returns Formatted currency string like "RM1,234.56"
+ */
+export const formatCurrency = (amount: number) => {
+	return new Intl.NumberFormat('en-MY', {
+		style: 'currency',
+		currency: 'MYR',
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2
+	}).format(amount)
+}

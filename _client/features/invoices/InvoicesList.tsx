@@ -4,7 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { Plus, Search } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { formatDateForDisplay } from '~c/lib/formatter'
+import { formatDateForDisplay, formatCurrency } from '~c/lib/formatter'
 import { trpc } from '~c/trpc'
 
 interface InvoicesListProps {
@@ -53,14 +53,6 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 		}
 	}
 
-	const formatCurrency = (amount: number) => {
-		return new Intl.NumberFormat('en-US', {
-			style: 'currency',
-			currency: 'USD',
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2
-		}).format(amount)
-	}
 
 	const getStatusBadge = (status: string) => {
 		const colors = {
