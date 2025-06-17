@@ -230,7 +230,11 @@ getById: publicProcedure
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { DB } = ctx.env
-			const invoiceId = crypto.randomUUID().slice(0, 8)
+			const invoiceId = 
+				`S${Date.now().toString().slice(-1)}${Math.floor(100000 + Math.random() * 900000)}`.replace(
+					/0/g,
+					() => Math.floor(Math.random() * 9 + 1).toString()
+				)
 			const createdAt = Math.floor(Date.now() / 1000)
 			const invoiceNumber = await generateInvoiceNumber(DB)
 
@@ -253,7 +257,11 @@ getById: publicProcedure
 
 			// Create invoice items
 			for (const item of input.items) {
-				const itemId = crypto.randomUUID().slice(0, 8)
+				const itemId = 
+					`I${Date.now().toString().slice(-1)}${Math.floor(100000 + Math.random() * 900000)}`.replace(
+						/0/g,
+						() => Math.floor(Math.random() * 9 + 1).toString()
+					)
 				await DB.prepare(
 					`INSERT INTO invoice_items (id, invoice_id, item_id, description, quantity, unit_price, created_at)
 					 VALUES (?, ?, ?, ?, ?, ?, ?)`
@@ -321,7 +329,11 @@ getById: publicProcedure
 
 			// Create new items
 			for (const item of input.items) {
-				const itemId = item.id || crypto.randomUUID().slice(0, 8)
+				const itemId = item.id || 
+					`I${Date.now().toString().slice(-1)}${Math.floor(100000 + Math.random() * 900000)}`.replace(
+						/0/g,
+						() => Math.floor(Math.random() * 9 + 1).toString()
+					)
 				await DB.prepare(
 					`INSERT INTO invoice_items (id, invoice_id, item_id, description, quantity, unit_price, created_at)
 					 VALUES (?, ?, ?, ?, ?, ?, ?)`
