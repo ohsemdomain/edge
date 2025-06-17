@@ -41,7 +41,9 @@ CREATE TABLE IF NOT EXISTS payments (
   amount REAL NOT NULL,
   payment_date INTEGER NOT NULL,
   payment_method TEXT,
+  type TEXT NOT NULL DEFAULT 'payment',
   notes TEXT,
+  is_active BOOLEAN DEFAULT TRUE NOT NULL,
   created_at INTEGER NOT NULL,
   FOREIGN KEY (contact_id) REFERENCES contacts(id),
   FOREIGN KEY (invoice_id) REFERENCES invoices(id)
@@ -51,3 +53,5 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE INDEX idx_payments_contact_id ON payments(contact_id);
 CREATE INDEX idx_payments_invoice_id ON payments(invoice_id);
 CREATE INDEX idx_payments_payment_date ON payments(payment_date);
+CREATE INDEX idx_payments_type ON payments(type);
+CREATE INDEX idx_payments_is_active ON payments(is_active);

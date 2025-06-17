@@ -10,6 +10,7 @@ import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { contactsRouter } from './routes/contacts'
 import { invoicesRouter } from './routes/invoices'
 import { itemsRouter } from './routes/items'
+import { paymentsRouter } from './routes/payments'
 import { createContext, router } from './trpc'
 
 // Environment interface
@@ -24,7 +25,8 @@ export interface Env {
 export const appRouter = router({
 	items: itemsRouter,
 	contacts: contactsRouter,
-	invoices: invoicesRouter
+	invoices: invoicesRouter,
+	payments: paymentsRouter
 })
 
 export type AppRouter = typeof appRouter

@@ -1,5 +1,5 @@
 // _client/features/invoices/PaymentModal.tsx
-import { Button, Group, Modal, NumberInput, Stack, Textarea, TextInput } from '@mantine/core'
+import { Button, Group, Modal, NumberInput, Stack, Textarea, Select } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
@@ -19,7 +19,17 @@ export function PaymentModal({ opened, onClose, contactId, invoiceId, onSuccess 
 	const [paymentMethod, setPaymentMethod] = useState('')
 	const [notes, setNotes] = useState('')
 
-	const createPaymentMutation = trpc.invoices.createPayment.useMutation()
+	const createPaymentMutation = trpc.payments.create.useMutation()
+
+	// Payment method options
+	const paymentMethodOptions = [
+		{ value: 'cash', label: 'Cash' },
+		{ value: 'check', label: 'Check' },
+		{ value: 'bank_transfer', label: 'Bank Transfer' },
+		{ value: 'credit_card', label: 'Credit Card' },
+		{ value: 'online', label: 'Online Payment' },
+		{ value: 'other', label: 'Other' }
+	]
 
 	const handleSubmit = async () => {
 		if (!amount || !paymentDate) {
@@ -87,7 +97,7 @@ export function PaymentModal({ opened, onClose, contactId, invoiceId, onSuccess 
 					min={0}
 					decimalScale={2}
 					fixedDecimalScale
-					prefix='$'
+					prefix='RM'
 					required
 				/>
 
@@ -95,14 +105,24 @@ export function PaymentModal({ opened, onClose, contactId, invoiceId, onSuccess 
 					label='Payment Date'
 					value={paymentDate}
 					onChange={(date) => setPaymentDate(date && typeof date === 'object' ? date as Date : (date ? new Date(date) : null))}
+					valueFormat="DD.MM.YYYY"
+					dateParser={(input) => {
+						// Parse custom format DD.MM.YYYY
+						const [day, month, year] = input.split('.')
+						if (day && month && year) {
+							return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+						}
+						return new Date(input)
+					}}
 					required
 				/>
 
-				<TextInput
+				<Select
 					label='Payment Method'
-					placeholder='e.g., Check, Credit Card, Bank Transfer'
+					placeholder='Select payment method'
+					data={paymentMethodOptions}
 					value={paymentMethod}
-					onChange={(e) => setPaymentMethod(e.target.value)}
+					onChange={(value) => setPaymentMethod(value || '')}
 				/>
 
 				<Textarea

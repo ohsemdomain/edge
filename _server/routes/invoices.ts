@@ -339,54 +339,5 @@ getById: publicProcedure
 			}
 
 			return { success: true }
-		}),
-
-	// Payment management
-	createPayment: publicProcedure
-		.input(
-			z.object({
-				contactId: z.string(),
-				invoiceId: z.string().optional(),
-				amount: z.number().positive(),
-				paymentDate: z.string().datetime(),
-				paymentMethod: z.string().optional(),
-				notes: z.string().optional()
-			})
-		)
-		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-			const paymentId = crypto.randomUUID().slice(0, 8)
-			const createdAt = Math.floor(Date.now() / 1000)
-
-			await DB.prepare(
-				`INSERT INTO payments (id, contact_id, invoice_id, amount, payment_date, payment_method, notes, created_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-			)
-				.bind(
-					paymentId,
-					input.contactId,
-					input.invoiceId || null,
-					input.amount,
-					Math.floor(new Date(input.paymentDate).getTime() / 1000),
-					input.paymentMethod || null,
-					input.notes || null,
-					createdAt
-				)
-				.run()
-
-			return {
-				id: paymentId,
-				createdAt: new Date(createdAt * 1000)
-			}
-		}),
-
-	deletePayment: publicProcedure
-		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-			await DB.prepare('DELETE FROM payments WHERE id = ?')
-				.bind(input.id)
-				.run()
-			return { success: true }
 		})
 })

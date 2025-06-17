@@ -2,9 +2,10 @@
 import { Badge, Box, Flex, Group, Tabs, Text } from '@mantine/core'
 import { GenericArchive } from './GenericArchive'
 import { useArchiveStore } from '~c/stores/useArchiveStore'
+import { formatCurrency, formatUnixTimestamp } from '~c/lib/formatter'
 
 interface ArchiveConfigItem {
-	key: 'contacts' | 'items' | 'invoices'
+	key: 'contacts' | 'items' | 'invoices' | 'payments'
 	label: string
 	count: number
 	renderItem: (item: any) => React.ReactNode
@@ -58,6 +59,32 @@ export function ArchivePage() {
 					</Text>
 					<Text size='sm' c='dimmed' className='geist'>
 						${item.total.toFixed(2)}
+					</Text>
+				</>
+			)
+		},
+		{
+			key: 'payments',
+			label: 'Payments',
+			count: counts.payments || 0,
+			renderItem: (item) => (
+				<>
+					<Group justify='space-between' w='100%'>
+						<div>
+							<Text fw={500}>{item.contactName || 'Unknown Contact'}</Text>
+							<Text size='sm' c='dimmed'>
+								{item.invoiceNumber ? `Invoice: ${item.invoiceNumber}` : 'No Invoice'}
+							</Text>
+						</div>
+						<div style={{ textAlign: 'right' }}>
+							<Text fw={500}>{formatCurrency(item.amount)}</Text>
+							<Badge size='xs' color={item.type === 'refund' ? 'red' : 'green'}>
+								{item.type === 'refund' ? 'Refund' : 'Payment'}
+							</Badge>
+						</div>
+					</Group>
+					<Text size='xs' c='dimmed'>
+						{formatUnixTimestamp(item.paymentDate)}
 					</Text>
 				</>
 			)

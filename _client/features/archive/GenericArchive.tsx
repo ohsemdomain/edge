@@ -8,7 +8,7 @@ import { useArchiveStore } from '~c/stores/useArchiveStore'
 import { trpc } from '~c/trpc'
 
 interface GenericArchiveProps {
-	feature: 'items' | 'contacts' | 'invoices'
+	feature: 'items' | 'contacts' | 'invoices' | 'payments'
 	renderItem: (item: any) => React.ReactNode
 }
 
@@ -31,7 +31,13 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 					limit: 1000,
 					isActive: false
 				})
-			: trpc.invoices.list.useQuery({
+			: feature === 'invoices'
+			? trpc.invoices.list.useQuery({
+					page: 1,
+					limit: 1000,
+					isActive: false
+				})
+			: trpc.payments.list.useQuery({
 					page: 1,
 					limit: 1000,
 					isActive: false
@@ -57,7 +63,9 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 			? (query.data as any)?.contacts || [] 
 			: feature === 'items'
 			? (query.data as any)?.items || []
-			: (query.data as any)?.invoices || []
+			: feature === 'invoices'
+			? (query.data as any)?.invoices || []
+			: (query.data as any)?.payments || []
 
 	// Update count when items change
 	useEffect(() => {
@@ -77,7 +85,9 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 
 	const handleDelete = (id: string, name: string) => {
 		if (window.confirm(`Permanently delete "${name}"?`)) {
-			toast.promise(deleteMutation.mutateAsync(id), {
+			// Different features expect different input formats
+			const deleteInput = feature === 'payments' ? { id } : id
+			toast.promise(deleteMutation.mutateAsync(deleteInput as any), {
 				loading: 'Deleting...',
 				success: 'Permanently deleted',
 				error: 'Could not delete'
@@ -111,7 +121,7 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 								<div>{renderItem(item)}</div>
 								<ArchiveActions
 									onToggleActive={() => handleToggleActive(item.id, false)}
-									onDelete={() => handleDelete(item.id, item.name || item.company_name || item.invoice_number)}
+									onDelete={() => handleDelete(item.id, item.name || item.company_name || item.invoice_number || item.contactName)}
 									isActive={false}
 									isToggling={toggleActiveMutation.isPending}
 									isDeleting={deleteMutation.isPending}

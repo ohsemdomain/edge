@@ -11,7 +11,7 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { Archive, Contact, FileText, LayoutDashboard, Logs, ScanBarcode } from 'lucide-react'
+import { Archive, Contact, FileText, LayoutDashboard, Logs, ScanBarcode, CreditCard } from 'lucide-react'
 import React from 'react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
@@ -24,6 +24,8 @@ import { InvoiceFormPage } from './features/invoices/InvoiceFormPage'
 import { InvoicesPage } from './features/invoices/InvoicesPage'
 import { ItemFormPage } from './features/items/ItemFormPage'
 import { ItemsPage } from './features/items/ItemsPage'
+import { PaymentFormPage } from './features/payments/PaymentFormPage'
+import { PaymentsPage } from './features/payments/PaymentsPage'
 
 import { trpc } from './trpc'
 
@@ -75,6 +77,17 @@ const routeConfig = [
 		subroutes: [
 			{ path: '/invoices/new', element: <InvoiceFormPage mode='create' /> },
 			{ path: '/invoices/edit/:id', element: <InvoiceFormPage mode='edit' /> }
+		]
+	},
+	{
+		path: '/payments',
+		label: 'Payments',
+		singular: 'Payment',
+		icon: CreditCard,
+		element: <PaymentsPage />,
+		subroutes: [
+			{ path: '/payments/new', element: <PaymentFormPage mode='create' /> },
+			{ path: '/payments/edit/:id', element: <PaymentFormPage mode='edit' /> }
 		]
 	},
 	{
