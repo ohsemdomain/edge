@@ -36,7 +36,7 @@ export function InvoiceItems({ items, onChange }: InvoiceItemsProps) {
 	// Convert items data to select options
 	const itemOptions = itemsData?.items.map(item => ({
 		value: item.id,
-		label: `${item.name} - $${item.unit_price.toFixed(2)}`,
+		label: `${item.name} - $${item.unitPrice.toFixed(2)}`,
 		item: item
 	})) || []
 
@@ -49,7 +49,7 @@ export function InvoiceItems({ items, onChange }: InvoiceItemsProps) {
 			const selectedItem = itemsData?.items.find(item => item.id === value)
 			if (selectedItem) {
 				updated[index].description = selectedItem.name
-				updated[index].unitPrice = selectedItem.unit_price
+				updated[index].unitPrice = selectedItem.unitPrice
 			}
 		}
 		

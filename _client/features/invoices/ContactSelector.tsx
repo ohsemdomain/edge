@@ -96,9 +96,8 @@ export function ContactSelector({
 			: contactsToUse.filter((contact) => {
 					const search = contactSelectorSearch.toLowerCase()
 					return (
-						contact.name?.toLowerCase().includes(search) ||
-						contact.company_name?.toLowerCase().includes(search) ||
-						contact.primary_phone?.includes(search)
+						contact.companyName?.toLowerCase().includes(search) ||
+						contact.primaryPhone?.includes(search)
 					)
 				})
 
@@ -128,7 +127,7 @@ export function ContactSelector({
 				}}
 			>
 				<Text size='sm' c={selectedContact ? undefined : 'dimmed'}>
-					{selectedContact ? selectedContact.name : placeholder}
+					{selectedContact ? selectedContact.companyName : placeholder}
 				</Text>
 				<ChevronDown size={18} style={{ flexShrink: 0 }} />
 			</UnstyledButton>
@@ -193,10 +192,10 @@ export function ContactSelector({
 											}}
 										>
 											<Text size='sm' fw={500} tt="uppercase">
-												{contact.company_name}
+												{contact.companyName}
 											</Text>
 											<Text size='xs' c='dimmed'>
-												{contact.primary_phone}
+												{contact.primaryPhone}
 											</Text>
 										</UnstyledButton>
 									))}

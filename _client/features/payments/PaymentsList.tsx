@@ -82,7 +82,7 @@ export function PaymentsList({ selectedId, onSelect }: PaymentsListProps) {
 						minWidth: 50
 					}}
 				>
-					{data?.totalPayments || 0}
+					{data?.totalItems || 0}
 				</Badge>
 				<ActionIcon size='input-sm' variant='filled' onClick={() => navigate('/payments/new')}>
 					<Plus size={18} />

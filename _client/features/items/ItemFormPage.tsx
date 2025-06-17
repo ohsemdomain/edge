@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
 import { trpc } from '~c/trpc'
+import type { ItemCreateInput } from '~/items/api'
 
 interface ItemFormPageProps {
 	mode: 'create' | 'edit'
@@ -12,7 +13,7 @@ interface ItemFormPageProps {
 export function ItemFormPage({ mode }: ItemFormPageProps) {
 	const navigate = useNavigate()
 	const { id: itemId } = useParams()
-	const [formData, setFormData] = useState({ name: '', description: '', unit_price: 0 })
+	const [formData, setFormData] = useState<ItemCreateInput>({ name: '', description: '', unitPrice: 0 })
 	const utils = trpc.useUtils()
 
 	// Use cached data from ItemsList query for edit mode
@@ -25,7 +26,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 		if (mode === 'edit' && itemId && itemsData) {
 			const item = itemsData.items.find((i) => i.id === itemId)
 			if (item) {
-				setFormData({ name: item.name, description: item.description, unit_price: item.unit_price })
+				setFormData({ name: item.name, description: item.description, unitPrice: item.unitPrice })
 			}
 		}
 	}, [mode, itemId, itemsData])
@@ -61,7 +62,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	}
 
 	const isLoading = createMutation.isPending || updateMutation.isPending
-	const canSubmit = formData.name && formData.description && formData.unit_price > 0 && !isLoading
+	const canSubmit = formData.name && formData.description && formData.unitPrice > 0 && !isLoading
 
 	return (
 		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
@@ -90,9 +91,9 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 						<NumberInput
 							label='Unit Price'
 							placeholder='Enter unit price'
-							value={formData.unit_price}
+							value={formData.unitPrice}
 							onChange={(value) =>
-								setFormData({ ...formData, unit_price: typeof value === 'number' ? value : 0 })
+								setFormData({ ...formData, unitPrice: typeof value === 'number' ? value : 0 })
 							}
 							min={0}
 							decimalScale={2}

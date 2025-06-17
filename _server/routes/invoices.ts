@@ -1,392 +1,352 @@
 // _server/routes/invoices.ts
-import { z } from 'zod'
+import { eq, like, and, desc, sql, inArray } from 'drizzle-orm'
 import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
+import { getDb, schema } from '../db'
 
+// Import shared types and utilities
+import type { InvoiceListResponse } from '~/invoices/api'
+import { toApiInvoiceWithRelations, toApiInvoiceItem } from '~/invoices/transforms'
+import { generateInvoiceId, generateInvoiceItemId, generateInvoiceNumber } from '~/invoices/constants'
+import {
+	invoiceCreateSchema,
+	invoiceUpdateSchema,
+	invoiceListSchema,
+	invoiceIdSchema
+} from '~/invoices/validation'
 
 const archiveInvoicesRouter = createArchiveRouter('invoices')
 
-// Helper function to generate invoice number
-async function generateInvoiceNumber(DB: any): Promise<string> {
+// Helper function to generate invoice number with database lookup
+async function generateInvoiceNumberWithDb(db: ReturnType<typeof getDb>): Promise<string> {
 	const year = new Date().getFullYear()
 	const prefix = `INV${year}`
 	
 	// Get the latest invoice number for this year
-	const { results } = await DB.prepare(
-		`SELECT invoice_number FROM invoices 
-		 WHERE invoice_number LIKE ? 
-		 ORDER BY invoice_number DESC 
-		 LIMIT 1`
-	)
-		.bind(`${prefix}%`)
-		.all()
+	const results = await db
+		.select({ invoiceNumber: schema.invoices.invoiceNumber })
+		.from(schema.invoices)
+		.where(like(schema.invoices.invoiceNumber, `${prefix}%`))
+		.orderBy(desc(schema.invoices.invoiceNumber))
+		.limit(1)
 	
-	if (results.length === 0) {
-		return `${prefix}0001`
-	}
-	
-	const lastNumber = Number.parseInt((results[0] as any).invoice_number.slice(-4)) || 0
-	const nextNumber = lastNumber + 1
-	return `${prefix}${nextNumber.toString().padStart(4, '0')}`
+	const lastInvoiceNumber = results.length > 0 ? results[0].invoiceNumber : undefined
+	return generateInvoiceNumber(lastInvoiceNumber)
 }
 
 export const invoicesRouter = router({
 	...archiveInvoicesRouter,
 
 	list: publicProcedure
-		.input(
-			z.object({
-				search: z.string().optional(),
-				page: z.number().default(1),
-				limit: z.number().default(1000),
-				isActive: z.boolean().default(true)
-			})
-		)
-		.query(async ({ input, ctx }) => {
-			const { DB } = ctx.env
+		.input(invoiceListSchema)
+		.query(async ({ input, ctx }): Promise<InvoiceListResponse> => {
+			const db = getDb(ctx.env.DB)
 			const { search, page, limit, isActive } = input
 			const offset = (page - 1) * limit
 
-			// Get invoices with contact info and calculated totals
-			let query = `
-				SELECT 
-					i.*,
-					c.company_name as contact_name,
-					c.email as contact_email,
-					COALESCE(SUM(ii.quantity * ii.unit_price), 0) as total
-				FROM invoices i
-				LEFT JOIN contacts c ON i.contact_id = c.id
-				LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
-				WHERE i.is_active = ?
-			`
-			const params: (string | number | boolean)[] = [isActive]
+			// Build conditions
+			const conditions = [eq(schema.invoices.isActive, isActive)]
+			
+			// Get invoices with contact info
+			const query = db
+				.select({
+					invoice: schema.invoices,
+					contact: {
+						id: schema.contacts.id,
+						companyName: schema.contacts.companyName,
+						email: schema.contacts.email
+					}
+				})
+				.from(schema.invoices)
+				.leftJoin(schema.contacts, eq(schema.invoices.contactId, schema.contacts.id))
+				.where(and(...conditions))
+				.orderBy(desc(schema.invoices.createdAt))
+				.limit(limit)
+				.offset(offset)
 
-			if (search) {
-				query += ' AND (i.invoice_number LIKE ? OR c.company_name LIKE ?)'
-				params.push(`%${search}%`, `%${search}%`)
+			const invoicesWithContacts = await query
+
+			// Get invoice items and calculate totals
+			const invoiceIds = invoicesWithContacts.map(row => row.invoice.id)
+			const invoiceItems = invoiceIds.length > 0 
+				? await db
+					.select({
+						invoiceId: schema.invoiceItems.invoiceId,
+						total: sql<number>`${schema.invoiceItems.quantity} * ${schema.invoiceItems.unitPrice}`
+					})
+					.from(schema.invoiceItems)
+					.where(inArray(schema.invoiceItems.invoiceId, invoiceIds))
+				: []
+
+			// Calculate totals per invoice
+			const invoiceTotals = invoiceItems.reduce((acc, item) => {
+				acc[item.invoiceId] = (acc[item.invoiceId] || 0) + item.total
+				return acc
+			}, {} as Record<string, number>)
+
+			// Get invoice-level balances (not contact-level)
+			const invoiceBalances: Record<string, number> = {}
+			
+			if (invoiceIds.length > 0) {
+				// Get payments per invoice
+				const payments = await db
+					.select({
+						invoiceId: schema.payments.invoiceId,
+						amount: schema.payments.amount
+					})
+					.from(schema.payments)
+					.where(and(
+						inArray(schema.payments.invoiceId, invoiceIds),
+						eq(schema.payments.isActive, true),
+						eq(schema.payments.type, 'payment')
+					))
+
+				const paymentTotalsByInvoice = payments.reduce((acc, payment) => {
+					if (payment.invoiceId) {
+						acc[payment.invoiceId] = (acc[payment.invoiceId] || 0) + payment.amount
+					}
+					return acc
+				}, {} as Record<string, number>)
+
+				// Calculate balance per invoice
+				invoiceIds.forEach(invoiceId => {
+					const invoiceTotal = invoiceTotals[invoiceId] || 0
+					const paid = paymentTotalsByInvoice[invoiceId] || 0
+					invoiceBalances[invoiceId] = invoiceTotal - paid
+				})
 			}
 
-			query += ' GROUP BY i.id'
-			query += ' ORDER BY i.created_at DESC LIMIT ? OFFSET ?'
-			params.push(limit, offset)
-
-			const { results: invoices } = await DB.prepare(query)
-				.bind(...params)
-				.all()
-
-			// Get contact balances for all unique contacts
-			const contactIds = [...new Set(invoices.map(inv => inv.contact_id))]
-			const balances: Record<string, number> = {}
-			
-			if (contactIds.length > 0) {
-				// Get invoice totals by contact
-				const { results: invoiceTotals } = await DB.prepare(`
-					SELECT 
-						i.contact_id,
-						COALESCE(SUM(ii.quantity * ii.unit_price), 0) as total
-					FROM invoices i
-					LEFT JOIN invoice_items ii ON i.id = ii.invoice_id
-					WHERE i.contact_id IN (${contactIds.map(() => '?').join(',')})
-					AND i.is_active = true
-					GROUP BY i.contact_id
-				`)
-					.bind(...contactIds)
-					.all<{ contact_id: string; total: number }>()
-
-				// Get payment totals by contact
-				const { results: paymentTotals } = await DB.prepare(`
-					SELECT 
-						contact_id,
-						COALESCE(SUM(amount), 0) as total
-					FROM payments
-					WHERE contact_id IN (${contactIds.map(() => '?').join(',')})
-					GROUP BY contact_id
-				`)
-					.bind(...contactIds)
-					.all<{ contact_id: string; total: number }>()
-
-				// Calculate balances
-				invoiceTotals.forEach(({ contact_id, total }) => {
-					balances[contact_id] = total
-				})
-				paymentTotals.forEach(({ contact_id, total }) => {
-					balances[contact_id] = (balances[contact_id] || 0) - total
-				})
+			// Apply search filter if needed
+			let filteredResults = invoicesWithContacts
+			if (search) {
+				filteredResults = invoicesWithContacts.filter(row => 
+					row.invoice.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
+					row.contact?.companyName?.toLowerCase().includes(search.toLowerCase())
+				)
 			}
 
 			return {
-				invoices: invoices.map((invoice: any) => ({
-					...invoice,
-					createdAt: new Date(invoice.created_at * 1000),
-					invoiceDate: new Date(invoice.invoice_date * 1000),
-					dueDate: invoice.due_date ? new Date(invoice.due_date * 1000) : null,
-					contactBalance: balances[invoice.contact_id] || 0,
-					status: balances[invoice.contact_id] > 0 ? 'unpaid' : 'paid'
-				})),
-				totalInvoices: invoices.length
+				invoices: filteredResults.map(row => 
+					toApiInvoiceWithRelations(row.invoice, {
+						contactName: row.contact?.companyName || '',
+						contactEmail: row.contact?.email || '',
+						contactPhone: '', // Not loaded in list view
+						total: invoiceTotals[row.invoice.id] || 0,
+						balance: invoiceBalances[row.invoice.id] || 0,
+						items: [], // Items not loaded in list view
+						payments: [], // Not loaded in list view
+						contact: row.contact ? {
+							id: row.contact.id,
+							companyName: row.contact.companyName,
+							email: row.contact.email,
+							primaryPhone: '', // Not loaded in this query
+							isActive: true // Not loaded in this query
+						} : null
+					})
+				),
+				totalItems: filteredResults.length
 			}
 		}),
 
-getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input, ctx }) => {
-        const { DB } = ctx.env
-        const { id } = input
+	getById: publicProcedure
+		.input(invoiceIdSchema)
+		.query(async ({ input: id, ctx }) => {
+			const db = getDb(ctx.env.DB)
+			
+			// Get invoice with contact
+			const result = await db
+				.select({
+					invoice: schema.invoices,
+					contact: schema.contacts
+				})
+				.from(schema.invoices)
+				.leftJoin(schema.contacts, eq(schema.invoices.contactId, schema.contacts.id))
+				.where(eq(schema.invoices.id, id))
+				.limit(1)
 
-        // Get invoice with contact details
-        const invoice = await DB.prepare(`
-            SELECT 
-                i.*,
-                c.company_name as contact_name,
-                c.email as contact_email,
-                c.primary_phone as contact_phone
-            FROM invoices i
-            LEFT JOIN contacts c ON i.contact_id = c.id
-            WHERE i.id = ?
-        `)
-            .bind(id)
-            .first()
+			if (result.length === 0) {
+				throw new Error('Invoice not found')
+			}
 
-        if (!invoice) {
-            throw new Error('Invoice not found')
-        }
+			const { invoice, contact } = result[0]
 
-        // Get invoice items
-        const { results: items } = await DB.prepare(`
-            SELECT 
-                ii.*,
-                i.name as item_name
-            FROM invoice_items ii
-            LEFT JOIN items i ON ii.item_id = i.id
-            WHERE ii.invoice_id = ?
-        `)
-            .bind(id)
-            .all()
+			// Get invoice items with items details
+			const itemsResult = await db
+				.select({
+					invoiceItem: schema.invoiceItems,
+					item: schema.items
+				})
+				.from(schema.invoiceItems)
+				.leftJoin(schema.items, eq(schema.invoiceItems.itemId, schema.items.id))
+				.where(eq(schema.invoiceItems.invoiceId, id))
 
-        // Get payments
-        const { results: payments } = await DB.prepare(`
-            SELECT * FROM payments
-            WHERE invoice_id = ?
-            ORDER BY payment_date DESC
-        `)
-            .bind(id)
-            .all()
+			// Get all payments for this invoice 
+			const paymentsResult = await db
+				.select({
+					id: schema.payments.id,
+					amount: schema.payments.amount,
+					paymentDate: schema.payments.paymentDate,
+					paymentMethod: schema.payments.paymentMethod,
+					notes: schema.payments.notes
+				})
+				.from(schema.payments)
+				.where(and(
+					eq(schema.payments.invoiceId, id),
+					eq(schema.payments.isActive, true),
+					eq(schema.payments.type, 'payment')
+				))
 
-        // Calculate totals
-        const total = items.reduce((sum, item: any) => sum + (item.quantity * item.unit_price), 0)
-        const paidAmount = payments.reduce((sum, payment: any) => sum + payment.amount, 0)
+			const totalPaid = paymentsResult.reduce((sum, payment) => sum + payment.amount, 0)
+			const total = itemsResult.reduce((sum, row) => sum + (row.invoiceItem.quantity * row.invoiceItem.unitPrice), 0)
+			const balance = total - totalPaid
 
-        // Get contact balance (simplified)
-        const contactBalance = total - paidAmount
+			// Transform to API format using shared transforms
+			const apiInvoiceItems = itemsResult.map(row => ({
+				...toApiInvoiceItem(row.invoiceItem),
+				itemName: row.item?.name || null
+			}))
 
-        // Determine status
-        let status = 'unpaid'
-        if (paidAmount >= total) {
-            status = 'paid'
-        } else if (paidAmount > 0) {
-            status = 'partial'
-        }
-
-        return {
-            id: invoice.id,
-            invoice_number: invoice.invoice_number,
-            contact_id: invoice.contact_id,
-            contact_name: invoice.contact_name,
-            contact_email: invoice.contact_email,
-            contact_phone: invoice.contact_phone,
-            notes: invoice.notes,
-            is_active: invoice.is_active,
-            items,
-            payments: payments.map((payment: any) => ({
-                ...payment,
-                paymentDate: payment.payment_date as number,
-                paymentMethod: payment.payment_method
-            })),
-            total,
-            paidAmount,
-            contactBalance,
-            status,
-            invoiceDate: invoice.invoice_date as number,
-            dueDate: invoice.due_date as number,
-            created_at: invoice.created_at as number
-        }
-    }),
+			return toApiInvoiceWithRelations(invoice, {
+				contactName: contact?.companyName || '',
+				contactEmail: contact?.email || '',
+				contactPhone: contact?.primaryPhone || '',
+				total,
+				balance,
+				items: apiInvoiceItems,
+				payments: paymentsResult.map(p => ({
+					id: p.id,
+					amount: p.amount,
+					paymentDate: p.paymentDate,
+					paymentMethod: p.paymentMethod || undefined,
+					notes: p.notes || undefined
+				})),
+				contact: contact ? {
+					id: contact.id,
+					companyName: contact.companyName,
+					email: contact.email,
+					primaryPhone: contact.primaryPhone || '',
+					isActive: contact.isActive
+				} : null
+			})
+		}),
 
 	create: publicProcedure
-		.input(
-			z.object({
-				contactId: z.string(),
-				invoiceDate: z.string().datetime(),
-				notes: z.string().optional(),
-				items: z.array(
-					z.object({
-						itemId: z.string().optional(),
-						description: z.string().min(1),
-						quantity: z.number().positive(),
-						unitPrice: z.number().nonnegative()
-					})
-				).min(1)
-			})
-		)
+		.input(invoiceCreateSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-			const invoiceId = 
-				`S${Date.now().toString().slice(-1)}${Math.floor(100000 + Math.random() * 900000)}`.replace(
-					/0/g,
-					() => Math.floor(Math.random() * 9 + 1).toString()
-				)
+			const db = getDb(ctx.env.DB)
+			const invoiceNumber = await generateInvoiceNumberWithDb(db)
+			const id = generateInvoiceId()
 			const createdAt = Math.floor(Date.now() / 1000)
-			const invoiceNumber = await generateInvoiceNumber(DB)
 
 			// Create invoice
-			await DB.prepare(
-				`INSERT INTO invoices (id, contact_id, invoice_number, invoice_date, due_date, notes, is_active, created_at) 
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-			)
-				.bind(
-					invoiceId,
-					input.contactId,
-					invoiceNumber,
-					Math.floor(new Date(input.invoiceDate).getTime() / 1000),
-					null, // No due date
-					input.notes || null,
-					true,
-					createdAt
-				)
-				.run()
+			await db.insert(schema.invoices).values({
+				id,
+				contactId: input.contactId,
+				invoiceNumber,
+				invoiceDate: input.invoiceDate,
+				dueDate: input.dueDate || null,
+				notes: input.notes || null,
+				isActive: true,
+				createdAt
+			})
 
 			// Create invoice items
 			for (const item of input.items) {
-				const itemId = 
-					`I${Date.now().toString().slice(-1)}${Math.floor(100000 + Math.random() * 900000)}`.replace(
-						/0/g,
-						() => Math.floor(Math.random() * 9 + 1).toString()
-					)
-				await DB.prepare(
-					`INSERT INTO invoice_items (id, invoice_id, item_id, description, quantity, unit_price, created_at)
-					 VALUES (?, ?, ?, ?, ?, ?, ?)`
-				)
-					.bind(
-						itemId,
-						invoiceId,
-						item.itemId || null,
-						item.description,
-						item.quantity,
-						item.unitPrice,
-						createdAt
-					)
-					.run()
+				const itemId = generateInvoiceItemId()
+				await db.insert(schema.invoiceItems).values({
+					id: itemId,
+					invoiceId: id,
+					itemId: item.itemId || null,
+					description: item.description,
+					quantity: item.quantity,
+					unitPrice: item.unitPrice,
+					createdAt
+				})
 			}
 
-			return {
-				id: invoiceId,
+			// Return the created invoice in API format
+			const dbInvoice = {
+				id,
+				contactId: input.contactId,
 				invoiceNumber,
-				createdAt: new Date(createdAt * 1000)
+				invoiceDate: input.invoiceDate,
+				dueDate: input.dueDate || null,
+				notes: input.notes || null,
+				isActive: true,
+				createdAt
 			}
+
+			return toApiInvoiceWithRelations(dbInvoice, {
+				contactName: '',
+				contactEmail: '',
+				contactPhone: '',
+				total: 0,
+				balance: 0,
+				items: [],
+				payments: [],
+				contact: null
+			})
 		}),
 
 	update: publicProcedure
-		.input(
-			z.object({
-				id: z.string(),
-				contactId: z.string(),
-				invoiceDate: z.string().datetime(),
-				notes: z.string().optional(),
-				items: z.array(
-					z.object({
-						id: z.string().optional(),
-						itemId: z.string().optional(),
-						description: z.string().min(1),
-						quantity: z.number().positive(),
-						unitPrice: z.number().nonnegative()
-					})
-				).min(1)
-			})
-		)
+		.input(invoiceUpdateSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-			const createdAt = Math.floor(Date.now() / 1000)
+			const db = getDb(ctx.env.DB)
 
 			// Update invoice
-			await DB.prepare(
-				`UPDATE invoices 
-				 SET contact_id = ?, invoice_date = ?, due_date = ?, notes = ?
-				 WHERE id = ?`
-			)
-				.bind(
-					input.contactId,
-					Math.floor(new Date(input.invoiceDate).getTime() / 1000),
-					null, // No due date
-					input.notes || null,
-					input.id
-				)
-				.run()
+			await db
+				.update(schema.invoices)
+				.set({
+					contactId: input.contactId,
+					invoiceDate: input.invoiceDate,
+					dueDate: input.dueDate || null,
+					notes: input.notes || null
+				})
+				.where(eq(schema.invoices.id, input.id))
 
 			// Delete existing items
-			await DB.prepare('DELETE FROM invoice_items WHERE invoice_id = ?')
-				.bind(input.id)
-				.run()
+			await db.delete(schema.invoiceItems).where(eq(schema.invoiceItems.invoiceId, input.id))
 
 			// Create new items
 			for (const item of input.items) {
-				const itemId = item.id || 
-					`I${Date.now().toString().slice(-1)}${Math.floor(100000 + Math.random() * 900000)}`.replace(
-						/0/g,
-						() => Math.floor(Math.random() * 9 + 1).toString()
-					)
-				await DB.prepare(
-					`INSERT INTO invoice_items (id, invoice_id, item_id, description, quantity, unit_price, created_at)
-					 VALUES (?, ?, ?, ?, ?, ?, ?)`
-				)
-					.bind(
-						itemId,
-						input.id,
-						item.itemId || null,
-						item.description,
-						item.quantity,
-						item.unitPrice,
-						createdAt
-					)
-					.run()
+				const itemId = generateInvoiceItemId()
+				await db.insert(schema.invoiceItems).values({
+					id: itemId,
+					invoiceId: input.id,
+					itemId: item.itemId || null,
+					description: item.description,
+					quantity: item.quantity,
+					unitPrice: item.unitPrice,
+					createdAt: Math.floor(Date.now() / 1000)
+				})
 			}
 
 			return { success: true }
 		}),
 
 	delete: publicProcedure
-		.input(z.string())
+		.input(invoiceIdSchema)
 		.mutation(async ({ input: id, ctx }) => {
-			const { DB } = ctx.env
+			const db = getDb(ctx.env.DB)
 			
-			// Check for related data
-			const { results: items } = await DB.prepare('SELECT COUNT(*) as count FROM invoice_items WHERE invoice_id = ?')
-				.bind(id)
-				.all()
+			// Check for related payments
+			const relatedPayments = await db
+				.select({ count: schema.payments.id })
+				.from(schema.payments)
+				.where(eq(schema.payments.invoiceId, id))
 			
-			const { results: payments } = await DB.prepare('SELECT COUNT(*) as count FROM payments WHERE invoice_id = ?')
-				.bind(id)
-				.all()
+			const paymentCount = relatedPayments.length
 			
-			const itemCount = (items[0] as any)?.count || 0
-			const paymentCount = (payments[0] as any)?.count || 0
-			
-			if (itemCount > 0 || paymentCount > 0) {
-				const dependencies = []
-				if (itemCount > 0) dependencies.push(itemCount === 1 ? 'invoice item' : 'invoice items')
-				if (paymentCount > 0) dependencies.push(paymentCount === 1 ? 'payment' : 'payments')
-				
-				// Format with "and" for last item if multiple
-				const formattedDeps = dependencies.length > 1 
-					? dependencies.slice(0, -1).join(', ') + ' and ' + dependencies[dependencies.length - 1]
-					: dependencies[0]
-				
-				throw new Error(`Delete Failed: Used in ${formattedDeps}`)
+			if (paymentCount > 0) {
+				const paymentText = paymentCount === 1 ? 'payment' : 'payments'
+				throw new Error(`Delete Failed: ${paymentCount} ${paymentText} exist`)
 			}
 			
-			// Safe to delete
-			await DB.prepare('DELETE FROM invoices WHERE id = ?')
-				.bind(id)
-				.run()
+			// Delete invoice items first (cascade)
+			await db.delete(schema.invoiceItems).where(eq(schema.invoiceItems.invoiceId, id))
+			
+			// Delete invoice
+			await db.delete(schema.invoices).where(eq(schema.invoices.id, id))
 			
 			return { success: true }
 		})

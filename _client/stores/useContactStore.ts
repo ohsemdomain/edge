@@ -1,47 +1,36 @@
 // _client/stores/useContactStore.ts
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import type { Contact, ContactAddress } from '~/contacts/api'
 
-// Shared interfaces (can be imported by both features)
-export interface Contact {
-	id: string
-	name: string
-	company_name: string
-	person_incharge: string
-	primary_phone: string
-	email: string | null
-	phone_alt_1: string | null
-	phone_alt_2: string | null
-	phone_alt_3: string | null
-	is_supplier: boolean
-	is_active: boolean
-	createdAt: string | Date
-}
+// Re-export shared types for convenience
+export type { Contact, ContactAddress }
 
+// Form data types based on shared API types
 export interface ContactFormData {
-	company_name: string
-	person_incharge: string
-	primary_phone: string
+	companyName: string
+	personIncharge: string
+	primaryPhone: string
 	email: string
-	phone_alt_1: string
-	phone_alt_2: string
-	phone_alt_3: string
-	is_supplier: boolean
+	phoneAlt1: string
+	phoneAlt2: string
+	phoneAlt3: string
+	isSupplier: boolean
 }
 
 export interface AddressForm {
 	id?: string
 	receiver: string
-	address_line1: string
-	address_line2: string
-	address_line3: string
-	address_line4: string
+	addressLine1: string
+	addressLine2: string
+	addressLine3: string
+	addressLine4: string
 	postcode: string
 	city: string
 	state: string
 	country: string
-	is_default_billing: boolean
-	is_default_shipping: boolean
+	isDefaultBilling: boolean
+	isDefaultShipping: boolean
 }
 
 interface ContactStore {
@@ -83,28 +72,28 @@ interface ContactStore {
 }
 
 const initialFormData: ContactFormData = {
-	company_name: '',
-	person_incharge: '',
-	primary_phone: '',
+	companyName: '',
+	personIncharge: '',
+	primaryPhone: '',
 	email: '',
-	phone_alt_1: '',
-	phone_alt_2: '',
-	phone_alt_3: '',
-	is_supplier: false
+	phoneAlt1: '',
+	phoneAlt2: '',
+	phoneAlt3: '',
+	isSupplier: false
 }
 
 const emptyAddress: AddressForm = {
 	receiver: '',
-	address_line1: '',
-	address_line2: '',
-	address_line3: '',
-	address_line4: '',
+	addressLine1: '',
+	addressLine2: '',
+	addressLine3: '',
+	addressLine4: '',
 	postcode: '',
 	city: '',
 	state: '',
 	country: '',
-	is_default_billing: false,
-	is_default_shipping: false
+	isDefaultBilling: false,
+	isDefaultShipping: false
 }
 
 const initialState = {
@@ -141,14 +130,14 @@ export const useContactStore = create<ContactStore>()(
 				updated[index] = { ...updated[index], [field]: value }
 				
 				// Handle default toggles
-				if (field === 'is_default_billing' && value) {
+				if (field === 'isDefaultBilling' && value) {
 					updated.forEach((addr, i) => {
-						if (i !== index) addr.is_default_billing = false
+						if (i !== index) addr.isDefaultBilling = false
 					})
 				}
-				if (field === 'is_default_shipping' && value) {
+				if (field === 'isDefaultShipping' && value) {
 					updated.forEach((addr, i) => {
-						if (i !== index) addr.is_default_shipping = false
+						if (i !== index) addr.isDefaultShipping = false
 					})
 				}
 				
@@ -181,29 +170,29 @@ export const useContactStore = create<ContactStore>()(
 			
 			loadContactForEdit: (contact, addresses) => set({
 				formData: {
-					company_name: contact.company_name,
-					person_incharge: contact.person_incharge,
-					primary_phone: contact.primary_phone,
+					companyName: contact.companyName,
+					personIncharge: contact.personIncharge,
+					primaryPhone: contact.primaryPhone,
 					email: contact.email || '',
-					phone_alt_1: contact.phone_alt_1 || '',
-					phone_alt_2: contact.phone_alt_2 || '',
-					phone_alt_3: contact.phone_alt_3 || '',
-					is_supplier: contact.is_supplier
+					phoneAlt1: contact.phoneAlt1 || '',
+					phoneAlt2: contact.phoneAlt2 || '',
+					phoneAlt3: contact.phoneAlt3 || '',
+					isSupplier: contact.isSupplier
 				},
 				formAddresses: addresses.length > 0 
 					? addresses.map((addr: any) => ({
 						id: addr.id,
 						receiver: addr.receiver,
-						address_line1: addr.address_line1,
-						address_line2: addr.address_line2 || '',
-						address_line3: addr.address_line3 || '',
-						address_line4: addr.address_line4 || '',
+						addressLine1: addr.addressLine1,
+						addressLine2: addr.addressLine2 || '',
+						addressLine3: addr.addressLine3 || '',
+						addressLine4: addr.addressLine4 || '',
 						postcode: addr.postcode,
 						city: addr.city,
 						state: addr.state,
 						country: addr.country,
-						is_default_billing: Boolean(addr.is_default_billing),
-						is_default_shipping: Boolean(addr.is_default_shipping)
+						isDefaultBilling: Boolean(addr.isDefaultBilling),
+						isDefaultShipping: Boolean(addr.isDefaultShipping)
 					}))
 					: [{ ...emptyAddress }],
 				formMode: 'edit'
@@ -219,9 +208,9 @@ export const useContactStore = create<ContactStore>()(
 				
 				const search = searchTerm.toLowerCase()
 				return contacts.filter(contact =>
-					contact.company_name?.toLowerCase().includes(search) ||
-					contact.person_incharge?.toLowerCase().includes(search) ||
-					contact.primary_phone?.includes(search) ||
+					contact.companyName?.toLowerCase().includes(search) ||
+					contact.personIncharge?.toLowerCase().includes(search) ||
+					contact.primaryPhone?.includes(search) ||
 					contact.email?.toLowerCase().includes(search)
 				)
 			},

@@ -3,7 +3,7 @@ import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/c
 import { Archive, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { formatDate } from '~c/lib/formatter'
+import { formatUnixTimestamp } from '~c/lib/formatter'
 import { trpc } from '~c/trpc'
 
 interface ContactDetailProps {
@@ -20,9 +20,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 		isActive: true
 	})
 
-	const { data: addresses } = trpc.contacts.getAddresses.useQuery({
-		contactId
-	})
+	const { data: addresses } = trpc.contacts.listAddresses.useQuery(contactId)
 
 	const toggleActiveMutation = trpc.contacts.toggleActive.useMutation({
 		onSuccess: () => {
@@ -58,7 +56,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 					className='border-b border-gray-200'
 				>
 					<div>
-						<Title order={2}>{contact.company_name.toUpperCase()}</Title>
+						<Title order={2}>{contact.companyName.toUpperCase()}</Title>
 						<Text c='dimmed' size='sm'>
 							Contact Details
 						</Text>
@@ -76,7 +74,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 							leftSection={<Archive size={16} />}
 							onClick={() => {
 								if (window.confirm('Move this contact to archive?')) {
-									handleToggleActive(contact.id, contact.is_active)
+									handleToggleActive(contact.id, contact.isActive)
 								}
 							}}
 							disabled={toggleActiveMutation.isPending}
@@ -92,14 +90,14 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 							<Text size='sm' c='dimmed'>
 								Company Name
 							</Text>
-							<Text size='lg'>{contact.company_name.toUpperCase()}</Text>
+							<Text size='lg'>{contact.companyName.toUpperCase()}</Text>
 						</div>
 
 						<div>
 							<Text size='sm' c='dimmed'>
 								Person In Charge
 							</Text>
-							<Text size='lg'>{contact.person_incharge}</Text>
+							<Text size='lg'>{contact.personIncharge}</Text>
 						</div>
 
 						<div>
@@ -107,7 +105,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 								Primary Phone
 							</Text>
 							<Text size='lg' className='geist'>
-								{contact.primary_phone}
+								{contact.primaryPhone}
 							</Text>
 						</div>
 
@@ -120,35 +118,35 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 							</div>
 						)}
 
-						{contact.phone_alt_1 && (
+						{contact.phoneAlt1 && (
 							<div>
 								<Text size='sm' c='dimmed'>
 									Alternative Phone 1
 								</Text>
 								<Text size='lg' className='geist'>
-									{contact.phone_alt_1}
+									{contact.phoneAlt1}
 								</Text>
 							</div>
 						)}
 
-						{contact.phone_alt_2 && (
+						{contact.phoneAlt2 && (
 							<div>
 								<Text size='sm' c='dimmed'>
 									Alternative Phone 2
 								</Text>
 								<Text size='lg' className='geist'>
-									{contact.phone_alt_2}
+									{contact.phoneAlt2}
 								</Text>
 							</div>
 						)}
 
-						{contact.phone_alt_3 && (
+						{contact.phoneAlt3 && (
 							<div>
 								<Text size='sm' c='dimmed'>
 									Alternative Phone 3
 								</Text>
 								<Text size='lg' className='geist'>
-									{contact.phone_alt_3}
+									{contact.phoneAlt3}
 								</Text>
 							</div>
 						)}
@@ -158,7 +156,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 								Type
 							</Text>
 							<Text size='lg' className='geist'>
-								{contact.is_supplier ? 'Supplier' : 'Client'}
+								{contact.isSupplier ? 'Supplier' : 'Client'}
 							</Text>
 						</div>
 
@@ -174,12 +172,12 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 											<Group justify='space-between'>
 												<Text fw={500}>Address {index + 1}</Text>
 												<Group gap='xs'>
-													{addr.is_default_billing && (
+													{addr.isDefaultBilling && (
 														<Text size='sm' c='blue'>
 															Default Billing
 														</Text>
 													)}
-													{addr.is_default_shipping && (
+													{addr.isDefaultShipping && (
 														<Text size='sm' c='green'>
 															Default Shipping
 														</Text>
@@ -188,10 +186,10 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 											</Group>
 
 											<Text size='sm'>{addr.receiver}</Text>
-											<Text size='sm'>{addr.address_line1}</Text>
-											{addr.address_line2 && <Text size='sm'>{addr.address_line2}</Text>}
-											{addr.address_line3 && <Text size='sm'>{addr.address_line3}</Text>}
-											{addr.address_line4 && <Text size='sm'>{addr.address_line4}</Text>}
+											<Text size='sm'>{addr.addressLine1}</Text>
+											{addr.addressLine2 && <Text size='sm'>{addr.addressLine2}</Text>}
+											{addr.addressLine3 && <Text size='sm'>{addr.addressLine3}</Text>}
+											{addr.addressLine4 && <Text size='sm'>{addr.addressLine4}</Text>}
 											<Text size='sm'>
 												{addr.postcode} {addr.city}
 											</Text>
@@ -217,7 +215,7 @@ export function ContactDetail({ contactId }: ContactDetailProps) {
 								Created
 							</Text>
 							<Text className='geist'>
-								{formatDate(Math.floor(new Date(contact.createdAt).getTime() / 1000))}
+								{formatUnixTimestamp(contact.createdAt)}
 							</Text>
 						</div>
 					</Stack>

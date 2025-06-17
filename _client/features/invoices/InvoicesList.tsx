@@ -30,8 +30,8 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 	const filteredInvoices = search
 		? data?.invoices?.filter(
 				(invoice) =>
-					invoice.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-					invoice.contact_name.toLowerCase().includes(search.toLowerCase())
+					invoice.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
+					invoice.contactName.toLowerCase().includes(search.toLowerCase())
 			) || []
 		: data?.invoices || []
 
@@ -63,6 +63,19 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 		return colors[status as keyof typeof colors] || 'gray'
 	}
 
+	const calculateInvoiceStatus = (invoice: any) => {
+		const totalAmount = invoice.total
+		const paidAmount = totalAmount - invoice.balance
+		
+		if (paidAmount <= 0) {
+			return 'unpaid'
+		} else if (paidAmount >= totalAmount) {
+			return 'paid'
+		} else {
+			return 'partial'
+		}
+	}
+
 	return (
 		<Stack h='100%' gap='sm'>
 			<Group gap='xs' align='stretch'>
@@ -84,7 +97,7 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 						minWidth: 50
 					}}
 				>
-					{data?.totalInvoices || 0}
+					{data?.totalItems || 0}
 				</Badge>
 				<ActionIcon size='input-sm' variant='filled' onClick={() => navigate('/invoices/new')}>
 					<Plus size={18} />
@@ -139,7 +152,7 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 									<Stack gap={1}>
 										<Group justify='space-between'>
 											<Text size='md' fw={500} truncate style={{ maxWidth: '200px' }}>
-												{invoice.contact_name}
+												{invoice.contactName}
 											</Text>
 											<Text className='geist' size='sm' fw={500}>
 												{formatCurrency(invoice.total)}
@@ -148,7 +161,7 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 										<Group justify='space-between'>
 											<Group gap='xs' align='center'>
 												<Text size='xs' c='dimmed'>
-													{invoice.invoice_number}
+													{invoice.invoiceNumber}
 												</Text>
 												<Text size='xs' c='dimmed'>
 													•
@@ -157,8 +170,8 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 													{formatDateForDisplay(new Date(invoice.invoiceDate))}
 												</Text>
 											</Group>
-											<Text size='10px' c={getStatusBadge(invoice.status)} fw={500}>
-												{invoice.status.toUpperCase()}
+											<Text size='10px' c={getStatusBadge(calculateInvoiceStatus(invoice))} fw={500}>
+												{calculateInvoiceStatus(invoice).toUpperCase()}
 											</Text>
 										</Group>
 									</Stack>

@@ -14,7 +14,7 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 	const navigate = useNavigate()
 	const utils = trpc.useUtils()
 
-	const { data: payment } = trpc.payments.getById.useQuery({ id: paymentId })
+	const { data: payment, error, isLoading } = trpc.payments.getById.useQuery(paymentId)
 
 	const toggleActiveMutation = trpc.payments.toggleActive.useMutation({
 		onSuccess: () => {
@@ -57,7 +57,7 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 				>
 					<div>
 						<Title order={2}>
-							{payment.contact_name as string}
+							{payment.contactName}
 						</Title>
 						<Text c='dimmed' size='sm'>
 							Payment Details
@@ -66,7 +66,7 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 					<Group>
 						<Button
 							leftSection={<Edit size={16} />}
-							onClick={() => navigate(`/payments/edit/${payment.id as string}`)}
+							onClick={() => navigate(`/payments/edit/${payment.id}`)}
 						>
 							Edit
 						</Button>
@@ -76,7 +76,7 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 							leftSection={<Archive size={16} />}
 							onClick={() => {
 								if (window.confirm('Move this payment to archive?')) {
-									handleToggleActive(payment.id as string, payment.is_active as boolean)
+									handleToggleActive(payment.id, payment.isActive)
 								}
 							}}
 							disabled={toggleActiveMutation.isPending}
@@ -93,22 +93,22 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 							<Group justify='space-between' mb='md'>
 								<Text fw={600}>Payment Summary</Text>
 								<Badge
-									color={getStatusBadge(payment.type as string)}
+									color={getStatusBadge(payment.type)}
 									size='lg'
 									variant='light'
 								>
-									{(payment.type as string).toUpperCase()}
+									{payment.type.toUpperCase()}
 								</Badge>
 							</Group>
 							<Group justify='space-between'>
 								<div>
 									<Text size='sm' c='dimmed'>Amount</Text>
-									<Text size='xl' fw={700}>{formatCurrency(payment.amount as number)}</Text>
+									<Text size='xl' fw={700}>{formatCurrency(payment.amount)}</Text>
 								</div>
 								<div style={{ textAlign: 'right' }}>
 									<Text size='sm' c='dimmed'>Payment Date</Text>
 									<Text size='lg' fw={600}>
-										{formatUnixTimestamp(payment.paymentDate as number)}
+										{formatUnixTimestamp(payment.paymentDate)}
 									</Text>
 								</div>
 							</Group>
@@ -118,22 +118,22 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 						<div>
 							<Text size='sm' c='dimmed' mb='xs'>Contact</Text>
 							<Card withBorder p='sm'>
-								<Text fw={500}>{payment.contact_name as string}</Text>
-								{(payment.contact_email as string) && (
-									<Text size='sm' c='dimmed'>{payment.contact_email as string}</Text>
+								<Text fw={500}>{payment.contactName}</Text>
+								{payment.contactEmail && (
+									<Text size='sm' c='dimmed'>{payment.contactEmail}</Text>
 								)}
-								{(payment.contact_phone as string) && (
-									<Text size='sm' c='dimmed'>{payment.contact_phone as string}</Text>
+								{payment.contactPhone && (
+									<Text size='sm' c='dimmed'>{payment.contactPhone}</Text>
 								)}
 							</Card>
 						</div>
 
 						{/* Invoice Information */}
-						{(payment.invoice_number as string) && (
+						{payment.invoiceNumber && (
 							<div>
 								<Text size='sm' c='dimmed' mb='xs'>Invoice</Text>
 								<Card withBorder p='sm'>
-									<Text fw={500}>{payment.invoice_number as string}</Text>
+									<Text fw={500}>{payment.invoiceNumber}</Text>
 								</Card>
 							</div>
 						)}
@@ -142,20 +142,20 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 						<Group grow>
 							<div>
 								<Text size='sm' c='dimmed'>Payment Method</Text>
-								<Text fw={500}>{(payment.paymentMethod as string) || 'Not specified'}</Text>
+								<Text fw={500}>{payment.paymentMethod || 'Not specified'}</Text>
 							</div>
 							<div>
 								<Text size='sm' c='dimmed'>Payment Type</Text>
-								<Text fw={500}>{(payment.type as string) || 'payment'}</Text>
+								<Text fw={500}>{payment.type}</Text>
 							</div>
 						</Group>
 
 						{/* Notes */}
-						{(payment.notes as string) && (
+						{payment.notes && (
 							<div>
 								<Text size='sm' c='dimmed' mb='xs'>Notes</Text>
 								<Card withBorder p='sm'>
-									<Text size='sm'>{payment.notes as string}</Text>
+									<Text size='sm'>{payment.notes}</Text>
 								</Card>
 							</div>
 						)}
@@ -163,12 +163,12 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 						{/* Metadata */}
 						<div>
 							<Text size='sm' c='dimmed' mb='xs'>Payment ID</Text>
-							<Text className='geist' size='sm'>{payment.id as string}</Text>
+							<Text className='geist' size='sm'>{payment.id}</Text>
 						</div>
 
 						<div>
 							<Text size='sm' c='dimmed' mb='xs'>Created</Text>
-							<Text className='geist' size='sm'>{formatUnixTimestamp(payment.created_at as number)}</Text>
+							<Text className='geist' size='sm'>{formatUnixTimestamp(payment.createdAt)}</Text>
 						</div>
 					</Stack>
 				</ScrollArea>

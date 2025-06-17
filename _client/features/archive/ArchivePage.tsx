@@ -21,12 +21,12 @@ export function ArchivePage() {
 			count: counts.contacts || 0,
 			renderItem: (item) => (
 				<>
-					<Text fw={500}>{item.company_name.toUpperCase()}</Text>
+					<Text fw={500}>{item.companyName.toUpperCase()}</Text>
 					<Text size='sm' c='dimmed'>
-						{item.person_incharge}
+						{item.personIncharge}
 					</Text>
 					<Text size='sm' c='dimmed'>
-						{item.is_supplier ? 'Supplier' : 'Client'}
+						{item.isSupplier ? 'Supplier' : 'Client'}
 					</Text>
 				</>
 			)
@@ -39,7 +39,7 @@ export function ArchivePage() {
 				<>
 					<Text fw={500}>{item.name}</Text>
 					<Text size='sm' c='dimmed'>
-						${item.unit_price.toFixed(2)}
+						{formatCurrency(item.unitPrice)}
 					</Text>
 					<Text size='sm' c='dimmed' className='geist'>
 						ID: {item.id.slice(0, 8)}...
@@ -53,12 +53,12 @@ export function ArchivePage() {
 			count: counts.invoices || 0,
 			renderItem: (item) => (
 				<>
-					<Text fw={500}>{item.invoice_number}</Text>
+					<Text fw={500}>{item.invoiceNumber}</Text>
 					<Text size='sm' c='dimmed'>
-						{item.contact_name}
+						{item.contactName}
 					</Text>
 					<Text size='sm' c='dimmed' className='geist'>
-						${item.total.toFixed(2)}
+						{formatCurrency(item.total)}
 					</Text>
 				</>
 			)

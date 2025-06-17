@@ -1,16 +1,19 @@
 // _server/routes/items.ts
-import { z } from 'zod'
+import { eq, like, and, desc } from 'drizzle-orm'
 import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
+import { getDb, schema } from '../db'
 
-interface ItemRow {
-	id: string
-	name: string
-	description: string
-	unit_price: number
-	is_active: boolean
-	created_at: number
-}
+// Import shared types and utilities
+import type { ItemListResponse } from '~/items/api'
+import { toApiItems, toApiItem } from '~/items/transforms'
+import { generateItemId } from '~/items/constants'
+import { 
+	itemCreateSchema, 
+	itemUpdateSchema, 
+	itemListSchema, 
+	itemIdSchema 
+} from '~/items/validation'
 
 const archiveItemsRouter = createArchiveRouter('items')
 
@@ -18,96 +21,90 @@ export const itemsRouter = router({
 	...archiveItemsRouter,
 
 	list: publicProcedure
-		.input(
-			z.object({
-				search: z.string().optional(),
-				page: z.number().default(1),
-				limit: z.number().default(1000),
-				isActive: z.boolean().default(true)
-			})
-		)
-		.query(async ({ input, ctx }) => {
-			const { DB } = ctx.env
+		.input(itemListSchema)
+		.query(async ({ input, ctx }): Promise<ItemListResponse> => {
+			const db = getDb(ctx.env.DB)
 			const { search, page, limit, isActive } = input
 			const offset = (page - 1) * limit
 
-			let query = 'SELECT * FROM items WHERE is_active = ?'
-			const params: (string | number | boolean)[] = [isActive]
-
+			const conditions = [eq(schema.items.isActive, isActive)]
+			
 			if (search) {
-				query += ' AND name LIKE ?'
-				params.push(`%${search}%`)
+				conditions.push(like(schema.items.name, `%${search}%`))
 			}
 
-			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
-			params.push(limit, offset)
-
-			const { results } = await DB.prepare(query)
-				.bind(...params)
-				.all<ItemRow>() // This is where ItemRow is used!
+			const results = await db
+				.select()
+				.from(schema.items)
+				.where(and(...conditions))
+				.orderBy(desc(schema.items.createdAt))
+				.limit(limit)
+				.offset(offset)
 
 			return {
-				items: results.map((item) => ({
-					...item,
-					createdAt: new Date(item.created_at * 1000)
-				})),
+				items: toApiItems(results),
 				totalItems: results.length
 			}
 		}),
 
 	create: publicProcedure
-		.input(z.object({ 
-			name: z.string().min(1), 
-			description: z.string().min(1),
-			unit_price: z.number().positive()
-		}))
+		.input(itemCreateSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-			const id = crypto.randomUUID().slice(0, 8)
+			const db = getDb(ctx.env.DB)
+			const id = generateItemId()
 			const createdAt = Math.floor(Date.now() / 1000)
 
-			await DB.prepare('INSERT INTO items (id, name, description, unit_price, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-				.bind(id, input.name, input.description, input.unit_price, true, createdAt)
-				.run()
-
-			return {
+			await db.insert(schema.items).values({
 				id,
 				name: input.name,
 				description: input.description,
-				unit_price: input.unit_price,
-				is_active: true,
-				createdAt: new Date(createdAt * 1000)
+				unitPrice: input.unitPrice,
+				isActive: true,
+				createdAt
+			})
+
+			// Return the created item in API format
+			const dbItem = {
+				id,
+				name: input.name,
+				description: input.description,
+				unitPrice: input.unitPrice,
+				isActive: true,
+				createdAt
 			}
+
+			return toApiItem(dbItem)
 		}),
 
 	update: publicProcedure
-		.input(
-			z.object({
-				id: z.string(),
-				name: z.string().min(1),
-				description: z.string().min(1),
-				unit_price: z.number().positive()
-			})
-		)
+		.input(itemUpdateSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
+			const db = getDb(ctx.env.DB)
 
-			await DB.prepare('UPDATE items SET name = ?, description = ?, unit_price = ? WHERE id = ?').bind(input.name, input.description, input.unit_price, input.id).run()
+			await db
+				.update(schema.items)
+				.set({
+					name: input.name,
+					description: input.description,
+					unitPrice: input.unitPrice
+				})
+				.where(eq(schema.items.id, input.id))
 
 			return { success: true }
 		}),
 
 	delete: publicProcedure
-		.input(z.string())
+		.input(itemIdSchema)
 		.mutation(async ({ input: id, ctx }) => {
-			const { DB } = ctx.env
+			const db = getDb(ctx.env.DB)
 			
 			// Check for related data in invoice_items
-			const { results } = await DB.prepare('SELECT COUNT(*) as count FROM invoice_items WHERE item_id = ?')
-				.bind(id)
-				.all()
+			const relatedItems = await db
+				.select({ count: schema.invoiceItems.id })
+				.from(schema.invoiceItems)
+				.where(eq(schema.invoiceItems.itemId, id))
 			
-			const invoiceItemCount = (results[0] as any)?.count || 0
+			const invoiceItemCount = relatedItems.length
 			
 			if (invoiceItemCount > 0) {
 				const itemText = invoiceItemCount === 1 ? 'invoice' : 'invoices'
@@ -115,9 +112,7 @@ export const itemsRouter = router({
 			}
 			
 			// Safe to delete
-			await DB.prepare('DELETE FROM items WHERE id = ?')
-				.bind(id)
-				.run()
+			await db.delete(schema.items).where(eq(schema.items.id, id))
 			
 			return { success: true }
 		})

@@ -1,5 +1,5 @@
 // _client/features/archive/GenericArchive.tsx
-import { Button, Card, Group, ScrollArea, Stack, TextInput } from '@mantine/core'
+import { Card, Group, ScrollArea, Stack, TextInput } from '@mantine/core'
 import { Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -93,7 +93,7 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 					loading: 'Deleting...',
 					success: 'Permanently deleted',
 					error: (error: any) => {
-						return (t) => <span className='text-sm'>{error?.message || 'Could not delete'}</span>
+						return error?.message || 'Could not delete'
 					}
 				},
 				{
@@ -139,7 +139,7 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 									onDelete={() =>
 										handleDelete(
 											item.id,
-											item.name || item.company_name || item.invoice_number || item.contactName
+											item.name || item.companyName || item.invoiceNumber || item.contactName
 										)
 									}
 									isActive={false}

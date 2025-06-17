@@ -49,7 +49,7 @@ export function PaymentModal({ opened, onClose, contactId, invoiceId, onSuccess 
 					contactId,
 					invoiceId,
 					amount: amountNum,
-					paymentDate: paymentDate.toISOString(),
+					paymentDate: Math.floor(paymentDate.getTime() / 1000), // Convert to Unix timestamp
 					paymentMethod: paymentMethod || undefined,
 					notes: notes || undefined
 				}),

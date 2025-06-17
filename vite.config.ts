@@ -15,7 +15,8 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'~c': path.resolve(__dirname, '_client'),
-			'~s': path.resolve(__dirname, '_server')
+			'~s': path.resolve(__dirname, '_server'),
+			'~': path.resolve(__dirname, 'shared')
 		}
 	},
 	build: {

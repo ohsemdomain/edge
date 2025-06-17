@@ -5,6 +5,7 @@ import { Plus, Search } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { trpc } from '~c/trpc'
+import { formatCurrency } from '~c/lib/formatter'
 
 interface ItemsListProps {
 	selectedId: string
@@ -124,7 +125,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 									<Group justify='space-between' align='start'>
 										<Text fw={500}>{item.name}</Text>
 										<Text size='sm' fw={500}>
-											${item.unit_price.toFixed(2)}
+											{formatCurrency(item.unitPrice)}
 										</Text>
 									</Group>
 									<Text className='geist' size='sm' c='dimmed'>

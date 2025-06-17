@@ -28,11 +28,11 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 	const filteredContacts = search
 		? data?.contacts?.filter(
 				(contact) =>
-					contact.company_name.toLowerCase().includes(search.toLowerCase()) ||
-					contact.primary_phone.includes(search) ||
-					contact.phone_alt_1?.includes(search) ||
-					contact.phone_alt_2?.includes(search) ||
-					contact.phone_alt_3?.includes(search)
+					contact.companyName.toLowerCase().includes(search.toLowerCase()) ||
+					contact.primaryPhone.includes(search) ||
+					contact.phoneAlt1?.includes(search) ||
+					contact.phoneAlt2?.includes(search) ||
+					contact.phoneAlt3?.includes(search)
 			) || []
 		: data?.contacts || []
 
@@ -129,9 +129,9 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 									}}
 								>
 									<Group justify='space-between' align='start'>
-										<Text fw={500}>{contact.company_name.toUpperCase()}</Text>
+										<Text fw={500}>{contact.companyName.toUpperCase()}</Text>
 										<Text size='sm' fw={500}>
-											{contact.is_supplier ? 'Supplier' : 'Client'}
+											{contact.isSupplier ? 'Supplier' : 'Client'}
 										</Text>
 									</Group>
 									<Text className='geist' size='sm' c='dimmed'>

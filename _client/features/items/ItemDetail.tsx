@@ -3,7 +3,7 @@ import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/c
 import { Archive, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { formatDate } from '~c/lib/formatter'
+import { formatUnixTimestamp, formatCurrency } from '~c/lib/formatter'
 import { trpc } from '~c/trpc'
 
 interface ItemDetailProps {
@@ -72,7 +72,7 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							leftSection={<Archive size={16} />}
 							onClick={() => {
 								if (window.confirm('Move this item to archive?')) {
-									handleToggleActive(item.id, item.is_active)
+									handleToggleActive(item.id, item.isActive)
 								}
 							}}
 							disabled={toggleActiveMutation.isPending}
@@ -102,7 +102,7 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							<Text size='sm' c='dimmed'>
 								Unit Price
 							</Text>
-							<Text size='lg'>${item.unit_price.toFixed(2)}</Text>
+							<Text size='lg'>{formatCurrency(item.unitPrice)}</Text>
 						</div>
 
 						<div>
@@ -118,7 +118,7 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							<Text size='sm' c='dimmed'>
 								Created
 							</Text>
-							<Text className='geist'>{formatDate(item.created_at)}</Text>
+							<Text className='geist'>{formatUnixTimestamp(item.createdAt)}</Text>
 						</div>
 					</Stack>
 				</ScrollArea>

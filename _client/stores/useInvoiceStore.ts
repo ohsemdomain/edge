@@ -1,47 +1,27 @@
-// _client/features/invoices/useInvoiceStore.ts
+// _client/stores/useInvoiceStore.ts
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 
-interface InvoiceItem {
-	id?: string
-	itemId?: string
-	description: string
-	quantity: number
-	unitPrice: number
-}
+// Import shared types as single source of truth
+import type { InvoiceItemCreateInput } from '~/invoices/api'
+import type { Contact, ContactAddress } from '~/contacts/api'
+import { DEFAULT_INVOICE_ITEM } from '~/invoices/constants'
 
-interface ContactAddress {
-	id: string
-	receiver: string
-	address_line1: string
-	address_line2?: string
-	address_line3?: string
-	address_line4?: string
-	postcode: string
-	city: string
-	state: string
-	country: string
-	is_default_billing: boolean
-	is_default_shipping: boolean
-}
-
+// Use shared ContactAddress type but create a local interface for selected contact
 interface SelectedContact {
 	id: string
-	name: string
+	companyName: string
 	email?: string
 	billingAddress?: ContactAddress
 	shippingAddress?: ContactAddress
 }
-
-// Import shared interfaces from contact store
-import type { Contact } from './useContactStore'
 
 interface InvoiceFormState {
 	// Form data
 	contactId: string
 	invoiceDate: Date
 	notes: string
-	items: InvoiceItem[]
+	items: InvoiceItemCreateInput[]
 	
 	// UI state
 	selectedContact: SelectedContact | null
@@ -64,8 +44,8 @@ interface InvoiceFormState {
 	setContactId: (contactId: string) => void
 	setInvoiceDate: (date: Date) => void
 	setNotes: (notes: string) => void
-	setItems: (items: InvoiceItem[]) => void
-	updateItem: (index: number, field: keyof InvoiceItem, value: any) => void
+	setItems: (items: InvoiceItemCreateInput[]) => void
+	updateItem: (index: number, field: keyof InvoiceItemCreateInput, value: any) => void
 	addItem: () => void
 	removeItem: (index: number) => void
 	
@@ -95,7 +75,7 @@ const initialState = {
 	contactId: '',
 	invoiceDate: new Date(),
 	notes: '',
-	items: [{ description: '', quantity: 1, unitPrice: 0 }] as InvoiceItem[],
+	items: [{ ...DEFAULT_INVOICE_ITEM }] as InvoiceItemCreateInput[],
 	selectedContact: null,
 	isContactSelectorOpen: false,
 	contactSelectorSearch: '',
@@ -127,7 +107,7 @@ export const useInvoiceStore = create<InvoiceFormState>()(
 			}),
 			
 			addItem: () => set((state) => ({
-				items: [...state.items, { description: '', quantity: 1, unitPrice: 0 }]
+				items: [...state.items, { ...DEFAULT_INVOICE_ITEM }]
 			})),
 			
 			removeItem: (index) => set((state) => ({
@@ -167,15 +147,14 @@ export const useInvoiceStore = create<InvoiceFormState>()(
 			
 			// Load existing invoice
 			loadInvoice: (invoice) => set({
-				contactId: invoice.contact_id,
-				invoiceDate: new Date(invoice.invoiceDate),
+				contactId: invoice.contactId,
+				invoiceDate: new Date(invoice.invoiceDate * 1000), // Convert from Unix timestamp
 				notes: invoice.notes || '',
 				items: invoice.items.map((item: any) => ({
-					id: item.id,
-					itemId: item.item_id || undefined,
+					itemId: item.itemId || undefined,
 					description: item.description,
 					quantity: item.quantity,
-					unitPrice: item.unit_price
+					unitPrice: item.unitPrice
 				}))
 			})
 		}),

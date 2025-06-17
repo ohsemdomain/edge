@@ -1,21 +1,22 @@
 // _server/routes/contacts.ts
-import { z } from 'zod'
+import { eq, like, or, and, desc } from 'drizzle-orm'
 import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
+import { getDb, schema } from '../db'
 
-interface ContactRow {
-	id: string
-	company_name: string
-	person_incharge: string
-	primary_phone: string
-	email: string | null
-	phone_alt_1: string | null
-	phone_alt_2: string | null
-	phone_alt_3: string | null
-	is_supplier: boolean
-	is_active: boolean
-	created_at: number
-}
+// Import shared types and utilities
+import type { ContactListResponse } from '~/contacts/api'
+import { toApiContacts, toApiContact, toApiContactAddresses, toApiContactAddress } from '~/contacts/transforms'
+import { generateContactId, generateAddressId } from '~/contacts/constants'
+import { 
+	contactCreateSchema, 
+	contactUpdateSchema, 
+	contactListSchema, 
+	contactIdSchema,
+	contactAddressCreateSchema,
+	contactAddressUpdateSchema,
+	addressIdSchema
+} from '~/contacts/validation'
 
 const archiveContactsRouter = createArchiveRouter('contacts')
 
@@ -23,338 +24,229 @@ export const contactsRouter = router({
 	...archiveContactsRouter,
 
 	list: publicProcedure
-		.input(
-			z.object({
-				search: z.string().optional(),
-				page: z.number().default(1),
-				limit: z.number().default(1000),
-				isActive: z.boolean().default(true)
-			})
-		)
-		.query(async ({ input, ctx }) => {
-			const { DB } = ctx.env
+		.input(contactListSchema)
+		.query(async ({ input, ctx }): Promise<ContactListResponse> => {
+			const db = getDb(ctx.env.DB)
 			const { search, page, limit, isActive } = input
 			const offset = (page - 1) * limit
 
-			let query = 'SELECT * FROM contacts WHERE is_active = ?'
-			const params: (string | number | boolean)[] = [isActive]
-
+			const conditions = [eq(schema.contacts.isActive, isActive)]
+			
 			if (search) {
-				query += ' AND (company_name LIKE ? OR primary_phone LIKE ?)'
-				params.push(`%${search}%`, `%${search}%`)
+				conditions.push(
+					or(
+						like(schema.contacts.companyName, `%${search}%`),
+						like(schema.contacts.primaryPhone, `%${search}%`)
+					)!
+				)
 			}
 
-			query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
-			params.push(limit, offset)
-
-			const { results } = await DB.prepare(query)
-				.bind(...params)
-				.all<ContactRow>()
+			const results = await db
+				.select()
+				.from(schema.contacts)
+				.where(and(...conditions))
+				.orderBy(desc(schema.contacts.createdAt))
+				.limit(limit)
+				.offset(offset)
 
 			return {
-				contacts: results.map((r) => ({
-					id: r.id,
-					name: r.company_name, // Add name field for invoices
-					company_name: r.company_name,
-					person_incharge: r.person_incharge,
-					primary_phone: r.primary_phone,
-					email: r.email,
-					phone_alt_1: r.phone_alt_1,
-					phone_alt_2: r.phone_alt_2,
-					phone_alt_3: r.phone_alt_3,
-					is_supplier: Boolean(r.is_supplier),
-					is_active: Boolean(r.is_active),
-					createdAt: new Date(r.created_at * 1000)
-				})),
+				contacts: toApiContacts(results),
 				totalItems: results.length
 			}
 		}),
 
 	create: publicProcedure
-		.input(
-			z.object({
-				company_name: z.string().min(1),
-				person_incharge: z.string().min(1),
-				primary_phone: z.string().min(1),
-				email: z.string().email().optional().or(z.literal('')),
-				phone_alt_1: z.string().optional(),
-				phone_alt_2: z.string().optional(),
-				phone_alt_3: z.string().optional(),
-				is_supplier: z.boolean().default(false)
-			})
-		)
+		.input(contactCreateSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-			const id =
-				`C${Date.now().toString().slice(-1)}${Math.floor(100000 + Math.random() * 900000)}`.replace(
-					/0/g,
-					() => Math.floor(Math.random() * 9 + 1).toString()
-				)
+			const db = getDb(ctx.env.DB)
+			const id = generateContactId()
 			const createdAt = Math.floor(Date.now() / 1000)
 
-			await DB.prepare(
-				'INSERT INTO contacts (id, company_name, person_incharge, primary_phone, email, phone_alt_1, phone_alt_2, phone_alt_3, is_supplier, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-			)
-				.bind(
-					id,
-					input.company_name,
-					input.person_incharge,
-					input.primary_phone,
-					input.email || null,
-					input.phone_alt_1 || null,
-					input.phone_alt_2 || null,
-					input.phone_alt_3 || null,
-					input.is_supplier,
-					true,
-					createdAt
-				)
-				.run()
-
-			return {
+			await db.insert(schema.contacts).values({
 				id,
-				company_name: input.company_name,
-				person_incharge: input.person_incharge,
-				primary_phone: input.primary_phone,
+				companyName: input.companyName,
+				personIncharge: input.personIncharge,
+				primaryPhone: input.primaryPhone,
 				email: input.email || null,
-				phone_alt_1: input.phone_alt_1 || null,
-				phone_alt_2: input.phone_alt_2 || null,
-				phone_alt_3: input.phone_alt_3 || null,
-				is_supplier: input.is_supplier,
-				is_active: true,
-				createdAt: new Date(createdAt * 1000)
+				phoneAlt1: input.phoneAlt1 || null,
+				phoneAlt2: input.phoneAlt2 || null,
+				phoneAlt3: input.phoneAlt3 || null,
+				isSupplier: input.isSupplier || false,
+				isActive: true,
+				createdAt
+			})
+
+			// Return the created contact in API format
+			const dbContact = {
+				id,
+				companyName: input.companyName,
+				personIncharge: input.personIncharge,
+				primaryPhone: input.primaryPhone,
+				email: input.email || null,
+				phoneAlt1: input.phoneAlt1 || null,
+				phoneAlt2: input.phoneAlt2 || null,
+				phoneAlt3: input.phoneAlt3 || null,
+				isSupplier: input.isSupplier || false,
+				isActive: true,
+				createdAt
 			}
+
+			return toApiContact(dbContact)
 		}),
 
 	update: publicProcedure
-		.input(
-			z.object({
-				id: z.string(),
-				company_name: z.string().min(1),
-				person_incharge: z.string().min(1),
-				primary_phone: z.string().min(1),
-				email: z.string().email().optional().or(z.literal('')),
-				phone_alt_1: z.string().optional(),
-				phone_alt_2: z.string().optional(),
-				phone_alt_3: z.string().optional(),
-				is_supplier: z.boolean()
-			})
-		)
+		.input(contactUpdateSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
+			const db = getDb(ctx.env.DB)
 
-			await DB.prepare(
-				'UPDATE contacts SET company_name = ?, person_incharge = ?, primary_phone = ?, email = ?, phone_alt_1 = ?, phone_alt_2 = ?, phone_alt_3 = ?, is_supplier = ? WHERE id = ?'
-			)
-				.bind(
-					input.company_name,
-					input.person_incharge,
-					input.primary_phone,
-					input.email || null,
-					input.phone_alt_1 || null,
-					input.phone_alt_2 || null,
-					input.phone_alt_3 || null,
-					input.is_supplier,
-					input.id
-				)
-				.run()
+			await db
+				.update(schema.contacts)
+				.set({
+					companyName: input.companyName,
+					personIncharge: input.personIncharge,
+					primaryPhone: input.primaryPhone,
+					email: input.email || null,
+					phoneAlt1: input.phoneAlt1 || null,
+					phoneAlt2: input.phoneAlt2 || null,
+					phoneAlt3: input.phoneAlt3 || null,
+					isSupplier: input.isSupplier || false
+				})
+				.where(eq(schema.contacts.id, input.id))
 
 			return { success: true }
 		}),
 
-	// Address methods
-
-	getAddresses: publicProcedure
-		.input(z.object({ contactId: z.string() }))
-		.query(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-
-			const { results } = await DB.prepare(
-				'SELECT * FROM contact_addresses WHERE contact_id = ? ORDER BY created_at DESC'
-			)
-				.bind(input.contactId)
-				.all()
-
-			return results
+	delete: publicProcedure
+		.input(contactIdSchema)
+		.mutation(async ({ input: id, ctx }) => {
+			const db = getDb(ctx.env.DB)
+			
+			// Check for related data in invoices
+			const relatedInvoices = await db
+				.select({ count: schema.invoices.id })
+				.from(schema.invoices)
+				.where(eq(schema.invoices.contactId, id))
+			
+			const invoiceCount = relatedInvoices.length
+			
+			if (invoiceCount > 0) {
+				const invoiceText = invoiceCount === 1 ? 'invoice' : 'invoices'
+				throw new Error(`Delete Failed: ${invoiceCount} ${invoiceText} exist`)
+			}
+			
+			// Check for related data in payments
+			const relatedPayments = await db
+				.select({ count: schema.payments.id })
+				.from(schema.payments)
+				.where(eq(schema.payments.contactId, id))
+			
+			const paymentCount = relatedPayments.length
+			
+			if (paymentCount > 0) {
+				const paymentText = paymentCount === 1 ? 'payment' : 'payments'
+				throw new Error(`Delete Failed: ${paymentCount} ${paymentText} exist`)
+			}
+			
+			// Delete addresses first (due to foreign key constraint)
+			await db.delete(schema.contactAddresses).where(eq(schema.contactAddresses.contactId, id))
+			
+			// Safe to delete contact
+			await db.delete(schema.contacts).where(eq(schema.contacts.id, id))
+			
+			return { success: true }
 		}),
 
-	addAddress: publicProcedure
-		.input(
-			z.object({
-				contactId: z.string(),
-				receiver: z.string().min(1),
-				address_line1: z.string().min(1),
-				address_line2: z.string().optional(),
-				address_line3: z.string().optional(),
-				address_line4: z.string().optional(),
-				postcode: z.string().min(1),
-				city: z.string().min(1),
-				state: z.string().min(1),
-				country: z.string().min(1),
-				is_default_billing: z.boolean().default(false),
-				is_default_shipping: z.boolean().default(false)
-			})
-		)
+	// Address management procedures
+	listAddresses: publicProcedure
+		.input(contactIdSchema)
+		.query(async ({ input: contactId, ctx }) => {
+			const db = getDb(ctx.env.DB)
+			
+			const results = await db
+				.select()
+				.from(schema.contactAddresses)
+				.where(eq(schema.contactAddresses.contactId, contactId))
+				.orderBy(desc(schema.contactAddresses.createdAt))
+
+			return toApiContactAddresses(results)
+		}),
+
+	createAddress: publicProcedure
+		.input(contactAddressCreateSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
-			const id = crypto.randomUUID().slice(0, 8)
+			const db = getDb(ctx.env.DB)
+			const id = generateAddressId()
 			const createdAt = Math.floor(Date.now() / 1000)
 
-			// If setting as default, unset other defaults first
-			if (input.is_default_billing) {
-				await DB.prepare(
-					'UPDATE contact_addresses SET is_default_billing = FALSE WHERE contact_id = ?'
-				)
-					.bind(input.contactId)
-					.run()
+			await db.insert(schema.contactAddresses).values({
+				id,
+				contactId: input.contactId,
+				receiver: input.receiver,
+				addressLine1: input.addressLine1,
+				addressLine2: input.addressLine2 || null,
+				addressLine3: input.addressLine3 || null,
+				addressLine4: input.addressLine4 || null,
+				postcode: input.postcode,
+				city: input.city,
+				state: input.state,
+				country: input.country,
+				isDefaultBilling: input.isDefaultBilling || false,
+				isDefaultShipping: input.isDefaultShipping || false,
+				createdAt
+			})
+
+			// Return the created address in API format
+			const dbAddress = {
+				id,
+				contactId: input.contactId,
+				receiver: input.receiver,
+				addressLine1: input.addressLine1,
+				addressLine2: input.addressLine2 || null,
+				addressLine3: input.addressLine3 || null,
+				addressLine4: input.addressLine4 || null,
+				postcode: input.postcode,
+				city: input.city,
+				state: input.state,
+				country: input.country,
+				isDefaultBilling: input.isDefaultBilling || false,
+				isDefaultShipping: input.isDefaultShipping || false,
+				createdAt
 			}
 
-			if (input.is_default_shipping) {
-				await DB.prepare(
-					'UPDATE contact_addresses SET is_default_shipping = FALSE WHERE contact_id = ?'
-				)
-					.bind(input.contactId)
-					.run()
-			}
-
-			await DB.prepare(
-				`INSERT INTO contact_addresses (
-	  id, contact_id, receiver, address_line1, address_line2, 
-	  address_line3, address_line4, postcode, city, state, 
-	  country, is_default_billing, is_default_shipping, created_at
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-			)
-				.bind(
-					id,
-					input.contactId,
-					input.receiver,
-					input.address_line1,
-					input.address_line2 || null,
-					input.address_line3 || null,
-					input.address_line4 || null,
-					input.postcode,
-					input.city,
-					input.state,
-					input.country,
-					input.is_default_billing,
-					input.is_default_shipping,
-					createdAt
-				)
-				.run()
-
-			return { id, ...input, created_at: createdAt }
+			return toApiContactAddress(dbAddress)
 		}),
 
 	updateAddress: publicProcedure
-		.input(
-			z.object({
-				id: z.string(),
-				contactId: z.string(),
-				receiver: z.string().min(1),
-				address_line1: z.string().min(1),
-				address_line2: z.string().optional(),
-				address_line3: z.string().optional(),
-				address_line4: z.string().optional(),
-				postcode: z.string().min(1),
-				city: z.string().min(1),
-				state: z.string().min(1),
-				country: z.string().min(1),
-				is_default_billing: z.boolean(),
-				is_default_shipping: z.boolean()
-			})
-		)
+		.input(contactAddressUpdateSchema)
 		.mutation(async ({ input, ctx }) => {
-			const { DB } = ctx.env
+			const db = getDb(ctx.env.DB)
 
-			// Handle default toggles
-			if (input.is_default_billing) {
-				await DB.prepare(
-					'UPDATE contact_addresses SET is_default_billing = FALSE WHERE contact_id = ? AND id != ?'
-				)
-					.bind(input.contactId, input.id)
-					.run()
-			}
-
-			if (input.is_default_shipping) {
-				await DB.prepare(
-					'UPDATE contact_addresses SET is_default_shipping = FALSE WHERE contact_id = ? AND id != ?'
-				)
-					.bind(input.contactId, input.id)
-					.run()
-			}
-
-			await DB.prepare(
-				`UPDATE contact_addresses SET 
-	  receiver = ?, address_line1 = ?, address_line2 = ?, 
-	  address_line3 = ?, address_line4 = ?, postcode = ?, 
-	  city = ?, state = ?, country = ?, 
-	  is_default_billing = ?, is_default_shipping = ?
-	WHERE id = ?`
-			)
-				.bind(
-					input.receiver,
-					input.address_line1,
-					input.address_line2 || null,
-					input.address_line3 || null,
-					input.address_line4 || null,
-					input.postcode,
-					input.city,
-					input.state,
-					input.country,
-					input.is_default_billing,
-					input.is_default_shipping,
-					input.id
-				)
-				.run()
+			await db
+				.update(schema.contactAddresses)
+				.set({
+					receiver: input.receiver,
+					addressLine1: input.addressLine1,
+					addressLine2: input.addressLine2 || null,
+					addressLine3: input.addressLine3 || null,
+					addressLine4: input.addressLine4 || null,
+					postcode: input.postcode,
+					city: input.city,
+					state: input.state,
+					country: input.country,
+					isDefaultBilling: input.isDefaultBilling || false,
+					isDefaultShipping: input.isDefaultShipping || false
+				})
+				.where(eq(schema.contactAddresses.id, input.id))
 
 			return { success: true }
 		}),
 
-	deleteAddress: publicProcedure.input(z.string()).mutation(async ({ input: id, ctx }) => {
-		const { DB } = ctx.env
-		await DB.prepare('DELETE FROM contact_addresses WHERE id = ?').bind(id).run()
-		return { success: true }
-	}),
-
-	delete: publicProcedure
-		.input(z.string())
+	deleteAddress: publicProcedure
+		.input(addressIdSchema)
 		.mutation(async ({ input: id, ctx }) => {
-			const { DB } = ctx.env
+			const db = getDb(ctx.env.DB)
 			
-			// Check for related data
-			const { results: addresses } = await DB.prepare('SELECT COUNT(*) as count FROM contact_addresses WHERE contact_id = ?')
-				.bind(id)
-				.all()
-			
-			const { results: invoices } = await DB.prepare('SELECT COUNT(*) as count FROM invoices WHERE contact_id = ?')
-				.bind(id)
-				.all()
-			
-			const { results: payments } = await DB.prepare('SELECT COUNT(*) as count FROM payments WHERE contact_id = ?')
-				.bind(id)
-				.all()
-			
-			const addressCount = (addresses[0] as any)?.count || 0
-			const invoiceCount = (invoices[0] as any)?.count || 0
-			const paymentCount = (payments[0] as any)?.count || 0
-			
-			if (addressCount > 0 || invoiceCount > 0 || paymentCount > 0) {
-				const dependencies = []
-				if (addressCount > 0) dependencies.push(addressCount === 1 ? 'address' : 'addresses')
-				if (invoiceCount > 0) dependencies.push(invoiceCount === 1 ? 'invoice' : 'invoices')
-				if (paymentCount > 0) dependencies.push(paymentCount === 1 ? 'payment' : 'payments')
-				
-				// Format with "and" for last item if multiple
-				const formattedDeps = dependencies.length > 1 
-					? dependencies.slice(0, -1).join(', ') + ' and ' + dependencies[dependencies.length - 1]
-					: dependencies[0]
-				
-				throw new Error(`Delete Failed: Used in ${formattedDeps}`)
-			}
-			
-			// Safe to delete
-			await DB.prepare('DELETE FROM contacts WHERE id = ?')
-				.bind(id)
-				.run()
+			await db.delete(schema.contactAddresses).where(eq(schema.contactAddresses.id, id))
 			
 			return { success: true }
 		})

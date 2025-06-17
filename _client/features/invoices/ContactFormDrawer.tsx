@@ -53,8 +53,8 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 	)
 
 	// Load addresses for edit mode
-	const { data: addressesData } = trpc.contacts.getAddresses.useQuery(
-		{ contactId: contactId || '' },
+	const { data: addressesData } = trpc.contacts.listAddresses.useQuery(
+		contactId || '',
 		{ 
 			enabled: opened && mode === 'edit' && !!contactId,
 			staleTime: 30000
@@ -70,7 +70,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 			const validAddresses = contactFormAddresses.filter(
 				(addr) =>
 					addr.receiver &&
-					addr.address_line1 &&
+					addr.addressLine1 &&
 					addr.postcode &&
 					addr.city &&
 					addr.state &&
@@ -82,7 +82,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 			}
 
 			utils.contacts.list.invalidate()
-			utils.contacts.getAddresses.invalidate()
+			utils.contacts.listAddresses.invalidate()
 			setContactFormLoading(false)
 			onSuccess(data.id)
 		},
@@ -101,7 +101,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 			const validAddresses = contactFormAddresses.filter(
 				(addr) =>
 					addr.receiver &&
-					addr.address_line1 &&
+					addr.addressLine1 &&
 					addr.postcode &&
 					addr.city &&
 					addr.state &&
@@ -112,18 +112,17 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 				if (addr.id) {
 					await updateAddressMutation.mutateAsync({
 						id: addr.id,
-						contactId,
 						receiver: addr.receiver,
-						address_line1: addr.address_line1,
-						address_line2: addr.address_line2,
-						address_line3: addr.address_line3,
-						address_line4: addr.address_line4,
+						addressLine1: addr.addressLine1,
+						addressLine2: addr.addressLine2,
+						addressLine3: addr.addressLine3,
+						addressLine4: addr.addressLine4,
 						postcode: addr.postcode,
 						city: addr.city,
 						state: addr.state,
 						country: addr.country,
-						is_default_billing: addr.is_default_billing,
-						is_default_shipping: addr.is_default_shipping
+						isDefaultBilling: addr.isDefaultBilling,
+						isDefaultShipping: addr.isDefaultShipping
 					})
 				} else {
 					await addAddressMutation.mutateAsync({ ...addr, contactId })
@@ -131,7 +130,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 			}
 
 			utils.contacts.list.invalidate()
-			utils.contacts.getAddresses.invalidate()
+			utils.contacts.listAddresses.invalidate()
 			setContactFormLoading(false)
 			onSuccess(contactId)
 		},
@@ -140,7 +139,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 		}
 	})
 
-	const addAddressMutation = trpc.contacts.addAddress.useMutation()
+	const addAddressMutation = trpc.contacts.createAddress.useMutation()
 	const updateAddressMutation = trpc.contacts.updateAddress.useMutation()
 	const deleteAddressMutation = trpc.contacts.deleteAddress.useMutation()
 
@@ -181,17 +180,39 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 
 		if (addr.id) {
 			await deleteAddressMutation.mutateAsync(addr.id)
-			utils.contacts.getAddresses.invalidate()
+			utils.contacts.listAddresses.invalidate()
 		}
 		
 		removeContactFormAddress(index)
 	}
 
 	const isLoading = createMutation.isPending || updateMutation.isPending || contactFormLoading
-	const canSubmit =
-		contactFormData.company_name &&
-		contactFormData.person_incharge &&
-		contactFormData.primary_phone &&
+	
+	// Validate that we have complete addresses with required defaults
+	const hasValidAddresses = () => {
+		// Check if we have at least one complete address
+		const completeAddresses = contactFormAddresses.filter(addr => 
+			addr.receiver && 
+			addr.addressLine1 && 
+			addr.postcode && 
+			addr.city && 
+			addr.state && 
+			addr.country
+		)
+		
+		if (completeAddresses.length === 0) return false
+		
+		// Check if we have at least one default billing and one default shipping
+		const hasDefaultBilling = completeAddresses.some(addr => addr.isDefaultBilling)
+		const hasDefaultShipping = completeAddresses.some(addr => addr.isDefaultShipping)
+		
+		return hasDefaultBilling && hasDefaultShipping
+	}
+	
+	const canSubmit = contactFormData.companyName && 
+		contactFormData.personIncharge && 
+		contactFormData.primaryPhone && 
+		hasValidAddresses() && 
 		!isLoading
 
 	return (
@@ -216,24 +237,24 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 						<TextInput
 							label='Company Name'
 							placeholder='Enter company name'
-							value={contactFormData.company_name}
-							onChange={(e) => setContactFormData({ company_name: e.target.value })}
+							value={contactFormData.companyName}
+							onChange={(e) => setContactFormData({ companyName: e.target.value })}
 							required
 						/>
 
 						<TextInput
 							label='Person In Charge'
 							placeholder='Enter person in charge'
-							value={contactFormData.person_incharge}
-							onChange={(e) => setContactFormData({ person_incharge: e.target.value })}
+							value={contactFormData.personIncharge}
+							onChange={(e) => setContactFormData({ personIncharge: e.target.value })}
 							required
 						/>
 
 						<TextInput
 							label='Primary Phone'
 							placeholder='Enter primary phone'
-							value={contactFormData.primary_phone}
-							onChange={(e) => setContactFormData({ primary_phone: e.target.value })}
+							value={contactFormData.primaryPhone}
+							onChange={(e) => setContactFormData({ primaryPhone: e.target.value })}
 							required
 						/>
 
@@ -248,29 +269,29 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 						<TextInput
 							label='Alternative Phone 1'
 							placeholder='Enter alternative phone 1 (optional)'
-							value={contactFormData.phone_alt_1}
-							onChange={(e) => setContactFormData({ phone_alt_1: e.target.value })}
+							value={contactFormData.phoneAlt1}
+							onChange={(e) => setContactFormData({ phoneAlt1: e.target.value })}
 						/>
 
 						<TextInput
 							label='Alternative Phone 2'
 							placeholder='Enter alternative phone 2 (optional)'
-							value={contactFormData.phone_alt_2}
-							onChange={(e) => setContactFormData({ phone_alt_2: e.target.value })}
+							value={contactFormData.phoneAlt2}
+							onChange={(e) => setContactFormData({ phoneAlt2: e.target.value })}
 						/>
 
 						<TextInput
 							label='Alternative Phone 3'
 							placeholder='Enter alternative phone 3 (optional)'
-							value={contactFormData.phone_alt_3}
-							onChange={(e) => setContactFormData({ phone_alt_3: e.target.value })}
+							value={contactFormData.phoneAlt3}
+							onChange={(e) => setContactFormData({ phoneAlt3: e.target.value })}
 						/>
 
 						<Switch
 							label='Is Supplier'
 							description='Toggle on for Supplier, off for Client'
-							checked={contactFormData.is_supplier}
-							onChange={(e) => setContactFormData({ is_supplier: e.currentTarget.checked })}
+							checked={contactFormData.isSupplier}
+							onChange={(e) => setContactFormData({ isSupplier: e.currentTarget.checked })}
 						/>
 					</Stack>
 
@@ -305,30 +326,30 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 									<TextInput
 										label='Address Line 1'
 										placeholder='Enter address line 1'
-										value={address.address_line1}
-										onChange={(e) => updateContactFormAddress(index, 'address_line1', e.target.value)}
+										value={address.addressLine1}
+										onChange={(e) => updateContactFormAddress(index, 'addressLine1', e.target.value)}
 										required
 									/>
 
 									<TextInput
 										label='Address Line 2'
 										placeholder='Enter address line 2 (optional)'
-										value={address.address_line2}
-										onChange={(e) => updateContactFormAddress(index, 'address_line2', e.target.value)}
+										value={address.addressLine2}
+										onChange={(e) => updateContactFormAddress(index, 'addressLine2', e.target.value)}
 									/>
 
 									<TextInput
 										label='Address Line 3'
 										placeholder='Enter address line 3 (optional)'
-										value={address.address_line3}
-										onChange={(e) => updateContactFormAddress(index, 'address_line3', e.target.value)}
+										value={address.addressLine3}
+										onChange={(e) => updateContactFormAddress(index, 'addressLine3', e.target.value)}
 									/>
 
 									<TextInput
 										label='Address Line 4'
 										placeholder='Enter address line 4 (optional)'
-										value={address.address_line4}
-										onChange={(e) => updateContactFormAddress(index, 'address_line4', e.target.value)}
+										value={address.addressLine4}
+										onChange={(e) => updateContactFormAddress(index, 'addressLine4', e.target.value)}
 									/>
 
 									<Group grow>
@@ -370,17 +391,17 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 									<Group>
 										<Checkbox
 											label='Default Billing'
-											checked={address.is_default_billing}
+											checked={address.isDefaultBilling}
 											onChange={(e) =>
-												updateContactFormAddress(index, 'is_default_billing', e.currentTarget.checked)
+												updateContactFormAddress(index, 'isDefaultBilling', e.currentTarget.checked)
 											}
 										/>
 
 										<Checkbox
 											label='Default Shipping'
-											checked={address.is_default_shipping}
+											checked={address.isDefaultShipping}
 											onChange={(e) =>
-												updateContactFormAddress(index, 'is_default_shipping', e.currentTarget.checked)
+												updateContactFormAddress(index, 'isDefaultShipping', e.currentTarget.checked)
 											}
 										/>
 									</Group>

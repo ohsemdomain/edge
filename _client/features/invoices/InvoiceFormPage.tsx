@@ -40,8 +40,8 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 	} = useInvoiceStore()
 
 	// Load addresses for selected contact
-	const { data: addressesData } = trpc.contacts.getAddresses.useQuery(
-		{ contactId: contactId },
+	const { data: addressesData } = trpc.contacts.listAddresses.useQuery(
+		contactId,
 		{ enabled: !!contactId }
 	)
 
@@ -50,7 +50,7 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 
 	// Load invoice data for edit mode
 	const { data: invoice } = trpc.invoices.getById.useQuery(
-		{ id: invoiceId! },
+		invoiceId!,
 		{ enabled: mode === 'edit' && !!invoiceId }
 	)
 
@@ -73,12 +73,12 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 		if (contactId && contactsData && contactsData.length > 0 && addressesData) {
 			const contact = contactsData.find(c => c.id === contactId)
 			if (contact) {
-				const billingAddress = addressesData.find(addr => addr.is_default_billing)
-				const shippingAddress = addressesData.find(addr => addr.is_default_shipping)
+				const billingAddress = addressesData.find(addr => addr.isDefaultBilling)
+				const shippingAddress = addressesData.find(addr => addr.isDefaultShipping)
 				
 				setSelectedContact({
 					id: contact.id,
-					name: contact.name,
+					companyName: contact.companyName,
 					email: contact.email || undefined,
 					billingAddress: billingAddress as any,
 					shippingAddress: shippingAddress as any
@@ -125,10 +125,9 @@ export function InvoiceFormPage({ mode }: InvoiceFormPageProps) {
 
 		const submitData = {
 			contactId: contactId,
-			invoiceDate: invoiceDate.toISOString(),
+			invoiceDate: Math.floor(invoiceDate.getTime() / 1000), // Convert to Unix timestamp
 			notes: notes || undefined,
 			items: validItems.map((item) => ({
-				id: item.id,
 				itemId: item.itemId,
 				description: item.description,
 				quantity: item.quantity,

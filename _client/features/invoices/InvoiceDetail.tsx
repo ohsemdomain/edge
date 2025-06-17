@@ -17,7 +17,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 	const utils = trpc.useUtils()
 	const [paymentModalOpen, setPaymentModalOpen] = useState(false)
 
-	const { data: invoice, refetch } = trpc.invoices.getById.useQuery({ id: invoiceId })
+	const { data: invoice, refetch, error, isLoading } = trpc.invoices.getById.useQuery(invoiceId)
 
 	const toggleActiveMutation = trpc.invoices.toggleActive.useMutation({
 		onSuccess: () => {
@@ -63,7 +63,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 						className='border-b border-gray-200'
 					>
 						<div>
-							<Title order={2}>{invoice.invoice_number as string}</Title>
+							<Title order={2}>{invoice.invoiceNumber}</Title>
 							<Text c='dimmed' size='sm'>
 								Invoice Details
 							</Text>
@@ -89,7 +89,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 								leftSection={<Archive size={16} />}
 								onClick={() => {
 									if (window.confirm('Move this invoice to archive?')) {
-										handleToggleActive(invoice.id as string, invoice.is_active as boolean)
+										handleToggleActive(invoice.id, invoice.isActive)
 									}
 								}}
 								disabled={toggleActiveMutation.isPending}
@@ -106,26 +106,26 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 								<Group justify='space-between' mb='md'>
 									<Text fw={600}>Invoice Summary</Text>
 									<Badge
-										color={getStatusBadge(invoice.status)}
+										color={getStatusBadge(invoice.isActive ? 'active' : 'inactive')}
 										size='lg'
 										variant='light'
 									>
-										{invoice.status.toUpperCase()}
+										{invoice.isActive ? 'ACTIVE' : 'INACTIVE'}
 									</Badge>
 								</Group>
 								<Group justify='space-between'>
 									<div>
 										<Text size='sm' c='dimmed'>Total Amount</Text>
-										<Text size='xl' fw={700}>{formatCurrency(invoice.total)}</Text>
+										<Text size='xl' fw={700}>{formatCurrency(invoice.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0))}</Text>
 									</div>
 									<div style={{ textAlign: 'right' }}>
 										<Text size='sm' c='dimmed'>Contact Balance</Text>
 										<Text 
 											size='lg' 
 											fw={600}
-											c={invoice.contactBalance > 0 ? 'red' : 'green'}
+											c={invoice.balance > 0 ? 'red' : 'green'}
 										>
-											{formatCurrency(invoice.contactBalance)}
+											{formatCurrency(invoice.balance)}
 										</Text>
 									</div>
 								</Group>
@@ -135,12 +135,12 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							<div>
 								<Text size='sm' c='dimmed' mb='xs'>Customer</Text>
 								<Card withBorder p='sm'>
-									<Text fw={500}>{invoice.contact_name as string}</Text>
-									{(invoice.contact_email as string) && (
-										<Text size='sm' c='dimmed'>{invoice.contact_email as string}</Text>
+									<Text fw={500}>{invoice.contactName as string}</Text>
+									{(invoice.contactEmail as string) && (
+										<Text size='sm' c='dimmed'>{invoice.contactEmail as string}</Text>
 									)}
-									{(invoice.contact_phone as string) && (
-										<Text size='sm' c='dimmed'>{invoice.contact_phone as string}</Text>
+									{(invoice.contactPhone as string) && (
+										<Text size='sm' c='dimmed'>{invoice.contactPhone as string}</Text>
 									)}
 								</Card>
 							</div>
@@ -149,7 +149,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							<Group grow>
 								<div>
 									<Text size='sm' c='dimmed'>Invoice Number</Text>
-									<Text fw={500} className='geist'>{invoice.invoice_number as string}</Text>
+									<Text fw={500} className='geist'>{invoice.invoiceNumber as string}</Text>
 								</div>
 								<div>
 									<Text size='sm' c='dimmed'>Invoice Date</Text>
@@ -181,19 +181,19 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 												<Table.Tr key={item.id}>
 													<Table.Td>
 														<Text size='sm'>{item.description}</Text>
-														{item.item_name && (
-															<Text size='xs' c='dimmed'>({item.item_name})</Text>
+														{item.itemName && (
+															<Text size='xs' c='dimmed'>({item.itemName})</Text>
 														)}
 													</Table.Td>
 													<Table.Td ta='center'>
 														<Text size='sm' className='geist'>{item.quantity}</Text>
 													</Table.Td>
 													<Table.Td ta='right'>
-														<Text size='sm' className='geist'>{formatCurrency(item.unit_price)}</Text>
+														<Text size='sm' className='geist'>{formatCurrency(item.unitPrice)}</Text>
 													</Table.Td>
 													<Table.Td ta='right'>
 														<Text size='sm' fw={500} className='geist'>
-															{formatCurrency(item.quantity * item.unit_price)}
+															{formatCurrency(item.quantity * item.unitPrice)}
 														</Text>
 													</Table.Td>
 												</Table.Tr>
@@ -294,7 +294,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 
 							<div>
 								<Text size='sm' c='dimmed' mb='xs'>Created</Text>
-								<Text className='geist' size='sm'>{formatUnixTimestamp(invoice.created_at)}</Text>
+								<Text className='geist' size='sm'>{formatUnixTimestamp(invoice.createdAt)}</Text>
 							</div>
 						</Stack>
 					</ScrollArea>
@@ -304,10 +304,11 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 			<PaymentModal
 				opened={paymentModalOpen}
 				onClose={() => setPaymentModalOpen(false)}
-				contactId={invoice.contact_id as string}
+				contactId={invoice.contactId as string}
 				invoiceId={invoice.id as string}
 				onSuccess={() => {
 					refetch()
+					utils.invoices.list.invalidate()
 					setPaymentModalOpen(false)
 				}}
 			/>

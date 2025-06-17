@@ -42,20 +42,20 @@ export function PaymentFormPage({ mode }: PaymentFormPageProps) {
 
 	// Load payment data for edit mode
 	const { data: paymentData } = trpc.payments.getById.useQuery(
-		{ id: paymentId! },
+		paymentId!,
 		{ enabled: mode === 'edit' && !!paymentId }
 	)
 
 	useEffect(() => {
 		if (mode === 'edit' && paymentData) {
 			setFormData({
-				contactId: paymentData.contact_id as string,
-				invoiceId: paymentData.invoice_id as string || '',
-				amount: paymentData.amount as number,
-				paymentDate: new Date((paymentData.paymentDate as number) * 1000),
-				paymentMethod: paymentData.paymentMethod as string || '',
-				type: (paymentData.type as 'payment' | 'refund') || 'payment',
-				notes: paymentData.notes as string || ''
+				contactId: paymentData.contactId,
+				invoiceId: paymentData.invoiceId || '',
+				amount: paymentData.amount,
+				paymentDate: new Date(paymentData.paymentDate * 1000),
+				paymentMethod: paymentData.paymentMethod || '',
+				type: paymentData.type,
+				notes: paymentData.notes || ''
 			})
 		}
 	}, [mode, paymentData])
@@ -76,9 +76,13 @@ export function PaymentFormPage({ mode }: PaymentFormPageProps) {
 
 	const handleSubmit = () => {
 		const submitData = {
-			...formData,
-			paymentDate: formData.paymentDate.toISOString(),
-			invoiceId: formData.invoiceId || undefined
+			contactId: formData.contactId,
+			invoiceId: formData.invoiceId || undefined,
+			amount: formData.amount,
+			paymentDate: Math.floor(formData.paymentDate.getTime() / 1000), // Convert to Unix timestamp
+			paymentMethod: formData.paymentMethod || undefined,
+			type: formData.type,
+			notes: formData.notes || undefined
 		}
 
 		if (mode === 'create') {
@@ -102,12 +106,12 @@ export function PaymentFormPage({ mode }: PaymentFormPageProps) {
 	// Prepare options for dropdowns
 	const contactOptions = contactsData?.contacts.map(contact => ({
 		value: contact.id,
-		label: contact.company_name
+		label: contact.companyName
 	})) || []
 
 	const invoiceOptions = invoicesData?.invoices.map(invoice => ({
 		value: invoice.id,
-		label: `${invoice.invoice_number} - ${invoice.contact_name}`
+		label: `${invoice.invoiceNumber} - ${invoice.contactName}`
 	})) || []
 
 	const paymentMethodOptions = [
