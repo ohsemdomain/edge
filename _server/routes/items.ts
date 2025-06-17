@@ -1,6 +1,5 @@
 // _server/routes/items.ts
 import { eq, like, and, desc } from 'drizzle-orm'
-import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
 import { getDb, schema } from '../db'
 
@@ -15,19 +14,17 @@ import {
 	itemIdSchema 
 } from '~/items/validation'
 
-const archiveItemsRouter = createArchiveRouter('items')
 
 export const itemsRouter = router({
-	...archiveItemsRouter,
 
 	list: publicProcedure
 		.input(itemListSchema)
 		.query(async ({ input, ctx }): Promise<ItemListResponse> => {
 			const db = getDb(ctx.env.DB)
-			const { search, page, limit, isActive } = input
+			const { search, page, limit } = input
 			const offset = (page - 1) * limit
 
-			const conditions = [eq(schema.items.isActive, isActive)]
+			const conditions: any[] = []
 			
 			if (search) {
 				conditions.push(like(schema.items.name, `%${search}%`))
@@ -36,7 +33,7 @@ export const itemsRouter = router({
 			const results = await db
 				.select()
 				.from(schema.items)
-				.where(and(...conditions))
+				.where(conditions.length > 0 ? and(...conditions) : undefined)
 				.orderBy(desc(schema.items.createdAt))
 				.limit(limit)
 				.offset(offset)
@@ -59,7 +56,6 @@ export const itemsRouter = router({
 				name: input.name,
 				description: input.description,
 				unitPrice: input.unitPrice,
-				isActive: true,
 				createdAt
 			})
 
@@ -69,7 +65,6 @@ export const itemsRouter = router({
 				name: input.name,
 				description: input.description,
 				unitPrice: input.unitPrice,
-				isActive: true,
 				createdAt
 			}
 

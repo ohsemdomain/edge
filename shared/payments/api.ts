@@ -10,7 +10,6 @@ export interface Payment {
   paymentMethod: string | null
   type: 'payment' | 'refund'
   notes: string | null
-  isActive: boolean
   createdAt: number    // Unix timestamp in seconds
 }
 
@@ -24,7 +23,6 @@ export interface PaymentWithRelations {
   paymentMethod: string | null
   type: 'payment' | 'refund'
   notes: string | null
-  isActive: boolean
   createdAt: number
   // Related data
   contactName: string

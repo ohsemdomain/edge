@@ -23,8 +23,7 @@ export const paymentListSchema = z.object({
   endDate: z.string().optional(),
   type: z.enum(['payment', 'refund']).optional(),
   page: z.number().default(1),
-  limit: z.number().default(1000),
-  isActive: z.boolean().default(true)
+  limit: z.number().default(1000)
 })
 
 export const paymentIdSchema = z.string().min(1)

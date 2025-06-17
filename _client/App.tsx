@@ -11,12 +11,11 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { Archive, Contact, FileText, LayoutDashboard, Logs, ScanBarcode, CreditCard } from 'lucide-react'
+import { Contact, FileText, LayoutDashboard, Logs, ScanBarcode, CreditCard } from 'lucide-react'
 import React from 'react'
 import { Toaster } from 'react-hot-toast'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 
-import { ArchivePage } from './features/archive/ArchivePage'
 import { ContactFormPage } from './features/contacts/ContactFormPage'
 import { ContactsPage } from './features/contacts/ContactsPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
@@ -90,12 +89,6 @@ const routeConfig = [
 			{ path: '/payments/edit/:id', element: <PaymentFormPage mode='edit' /> }
 		]
 	},
-	{
-		path: '/archive',
-		label: 'Archive',
-		icon: Archive,
-		element: <ArchivePage />
-	}
 ]
 
 function App() {

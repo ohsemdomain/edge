@@ -31,8 +31,7 @@ export const invoiceUpdateSchema = invoiceCreateSchema.extend({
 export const invoiceListSchema = z.object({
   search: z.string().optional(),
   page: z.number().default(1),
-  limit: z.number().default(1000),
-  isActive: z.boolean().default(true)
+  limit: z.number().default(1000)
 })
 
 export const invoiceIdSchema = z.string().min(1, 'Invoice ID is required')

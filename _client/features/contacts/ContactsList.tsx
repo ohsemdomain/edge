@@ -20,8 +20,7 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 	const { data } = trpc.contacts.list.useQuery({
 		search: '', // Always empty for server
 		page: 1,
-		limit: 1000, // Get all contacts
-		isActive: true
+		limit: 1000 // Get all contacts
 	})
 
 	// Client-side filter
@@ -129,13 +128,20 @@ export function ContactsList({ selectedId, onSelect }: ContactsListProps) {
 									}}
 								>
 									<Group justify='space-between' align='start'>
-										<Text fw={500}>{contact.companyName.toUpperCase()}</Text>
-										<Text size='sm' fw={500}>
+										<Group gap='xs'>
+											<Text truncate fw={500}>
+												{contact.companyName.toUpperCase()}
+											</Text>
+											<Text size='sm' c='dimmed'>
+												{contact.isSupplier ? 'Supplier' : 'Client'}
+											</Text>
+										</Group>
+										<Text size='sm' c='dimmed'>
 											{contact.isSupplier ? 'Supplier' : 'Client'}
 										</Text>
 									</Group>
-									<Text className='geist' size='sm' c='dimmed'>
-										{contact.id}
+									<Text size='sm' fw={500}>
+										{contact.primaryPhone}
 									</Text>
 								</Card>
 							</div>

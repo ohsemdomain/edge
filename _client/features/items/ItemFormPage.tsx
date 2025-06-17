@@ -1,5 +1,5 @@
 //_client/features/items/ItemFormPage.tsx
-import { Box, Button, Group, NumberInput, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { Box, Button, Group, NumberInput, Stack, TextInput, Textarea } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -18,7 +18,7 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 
 	// Use cached data from ItemsList query for edit mode
 	const { data: itemsData } = trpc.items.list.useQuery(
-		{ search: '', page: 1, limit: 1000, isActive: true },
+		{ search: '', page: 1, limit: 1000 },
 		{ enabled: mode === 'edit' }
 	)
 
@@ -67,10 +67,6 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 	return (
 		<Stack h='100%' gap={0} justify='start' align='center' mt='lg'>
 			<Box maw={800} w='100%' p='md' style={{ overflow: 'hidden' }}>
-				<Group justify='space-between' align='center'>
-					<Text>Placholder</Text>
-					<Text>Placholder</Text>
-				</Group>
 				<Stack mt='xl'>
 					<Stack gap='md'>
 						<TextInput

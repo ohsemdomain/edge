@@ -6,7 +6,6 @@ export interface Item {
 	name: string
 	description: string
 	unitPrice: number
-	isActive: boolean
 	createdAt: number  // Unix timestamp in seconds
 }
 
@@ -32,5 +31,4 @@ export interface ItemListParams {
 	search?: string
 	page?: number
 	limit?: number
-	isActive?: boolean
 }

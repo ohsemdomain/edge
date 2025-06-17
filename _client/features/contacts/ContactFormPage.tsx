@@ -58,7 +58,7 @@ export function ContactFormPage({ mode, onSuccess }: ContactFormPageProps) {
 
 	// Load contact data for edit mode
 	const { data: contactData } = trpc.contacts.list.useQuery(
-		{ page: 1, limit: 1000, isActive: true },
+		{ page: 1, limit: 1000 },
 		{ enabled: mode === 'edit' && !!contactId }
 	)
 

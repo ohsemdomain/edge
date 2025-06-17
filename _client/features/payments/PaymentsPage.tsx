@@ -15,8 +15,7 @@ export function PaymentsPage() {
 	const { data } = trpc.payments.list.useQuery({
 		search: '',
 		page: 1,
-		limit: 1000,
-		isActive: true
+		limit: 1000
 	})
 
 	// Auto-select first payment if none selected on desktop

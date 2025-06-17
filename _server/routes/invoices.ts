@@ -1,6 +1,5 @@
 // _server/routes/invoices.ts
 import { eq, like, and, desc, sql, inArray } from 'drizzle-orm'
-import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
 import { getDb, schema } from '../db'
 
@@ -15,7 +14,6 @@ import {
 	invoiceIdSchema
 } from '~/invoices/validation'
 
-const archiveInvoicesRouter = createArchiveRouter('invoices')
 
 // Helper function to generate invoice number with database lookup
 async function generateInvoiceNumberWithDb(db: ReturnType<typeof getDb>): Promise<string> {
@@ -35,17 +33,16 @@ async function generateInvoiceNumberWithDb(db: ReturnType<typeof getDb>): Promis
 }
 
 export const invoicesRouter = router({
-	...archiveInvoicesRouter,
 
 	list: publicProcedure
 		.input(invoiceListSchema)
 		.query(async ({ input, ctx }): Promise<InvoiceListResponse> => {
 			const db = getDb(ctx.env.DB)
-			const { search, page, limit, isActive } = input
+			const { search, page, limit } = input
 			const offset = (page - 1) * limit
 
 			// Build conditions
-			const conditions = [eq(schema.invoices.isActive, isActive)]
+			const conditions: any[] = []
 			
 			// Get invoices with contact info
 			const query = db
@@ -59,7 +56,7 @@ export const invoicesRouter = router({
 				})
 				.from(schema.invoices)
 				.leftJoin(schema.contacts, eq(schema.invoices.contactId, schema.contacts.id))
-				.where(and(...conditions))
+				.where(conditions.length > 0 ? and(...conditions) : undefined)
 				.orderBy(desc(schema.invoices.createdAt))
 				.limit(limit)
 				.offset(offset)
@@ -97,7 +94,6 @@ export const invoicesRouter = router({
 					.from(schema.payments)
 					.where(and(
 						inArray(schema.payments.invoiceId, invoiceIds),
-						eq(schema.payments.isActive, true),
 						eq(schema.payments.type, 'payment')
 					))
 
@@ -139,8 +135,7 @@ export const invoicesRouter = router({
 							id: row.contact.id,
 							companyName: row.contact.companyName,
 							email: row.contact.email,
-							primaryPhone: '', // Not loaded in this query
-							isActive: true // Not loaded in this query
+							primaryPhone: '' // Not loaded in this query
 						} : null
 					})
 				),
@@ -192,7 +187,6 @@ export const invoicesRouter = router({
 				.from(schema.payments)
 				.where(and(
 					eq(schema.payments.invoiceId, id),
-					eq(schema.payments.isActive, true),
 					eq(schema.payments.type, 'payment')
 				))
 
@@ -224,8 +218,7 @@ export const invoicesRouter = router({
 					id: contact.id,
 					companyName: contact.companyName,
 					email: contact.email,
-					primaryPhone: contact.primaryPhone || '',
-					isActive: contact.isActive
+					primaryPhone: contact.primaryPhone || ''
 				} : null
 			})
 		}),
@@ -246,7 +239,6 @@ export const invoicesRouter = router({
 				invoiceDate: input.invoiceDate,
 				dueDate: input.dueDate || null,
 				notes: input.notes || null,
-				isActive: true,
 				createdAt
 			})
 
@@ -272,7 +264,6 @@ export const invoicesRouter = router({
 				invoiceDate: input.invoiceDate,
 				dueDate: input.dueDate || null,
 				notes: input.notes || null,
-				isActive: true,
 				createdAt
 			}
 

@@ -12,9 +12,7 @@ export function ContactsPage() {
 
 	const selectedId = searchParams.get('id') || ''
 
-	const { data } = trpc.contacts.list.useQuery({
-		isActive: true
-	})
+	const { data } = trpc.contacts.list.useQuery({})
 
 	// Auto-select first contact if none selected on desktop
 	useEffect(() => {

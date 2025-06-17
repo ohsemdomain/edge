@@ -45,7 +45,7 @@ export function ContactFormDrawer({ opened, onClose, onSuccess, mode, contactId 
 
 	// Load contact data for edit mode
 	const { data: contactsData } = trpc.contacts.list.useQuery(
-		{ isActive: true },
+		{},
 		{ 
 			enabled: opened && mode === 'edit' && !!contactId,
 			staleTime: 30000

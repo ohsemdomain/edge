@@ -31,8 +31,7 @@ export const contactUpdateSchema = z.object({
 export const contactListSchema = z.object({
 	search: z.string().optional(),
 	page: z.number().default(DEFAULT_CONTACTS_PAGE),
-	limit: z.number().default(DEFAULT_CONTACTS_LIMIT),
-	isActive: z.boolean().default(true)
+	limit: z.number().default(DEFAULT_CONTACTS_LIMIT)
 })
 
 // Contact ID validation

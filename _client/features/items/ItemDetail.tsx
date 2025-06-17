@@ -1,9 +1,20 @@
 // _client/features/items/ItemDetail.tsx
-import { Button, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
-import { Archive, Edit } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import {
+	Badge,
+	Button,
+	Divider,
+	Grid,
+	Group,
+	Paper,
+	ScrollArea,
+	Stack,
+	Text,
+	Title
+} from '@mantine/core'
+import { Edit, Info, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { formatUnixTimestamp, formatCurrency } from '~c/lib/formatter'
+import { useNavigate } from 'react-router-dom'
+import { formatCurrency, formatUnixTimestamp } from '~c/lib/formatter'
 import { trpc } from '~c/trpc'
 
 interface ItemDetailProps {
@@ -16,26 +27,24 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 
 	const { data: itemsData } = trpc.items.list.useQuery({
 		page: 1,
-		limit: 1000,
-		isActive: true
+		limit: 1000
 	})
 
-	const toggleActiveMutation = trpc.items.toggleActive.useMutation({
+	const deleteMutation = trpc.items.delete.useMutation({
 		onSuccess: () => {
-			navigate('/items')
+			toast.success('Item deleted successfully')
 			utils.items.list.invalidate()
+			navigate('/items')
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to delete item')
 		}
 	})
 
-	const handleToggleActive = (id: string, currentlyActive: boolean) => {
-		const action = currentlyActive ? 'Archiving' : 'Restoring'
-		const actionPast = currentlyActive ? 'archived' : 'restored'
-
-		toast.promise(toggleActiveMutation.mutateAsync({ id }), {
-			loading: `${action}...`,
-			success: `Successfully ${actionPast}`,
-			error: `Could not ${action.toLowerCase()}`
-		})
+	const handleDelete = () => {
+		if (window.confirm('Are you sure you want to delete this item?')) {
+			deleteMutation.mutate(itemId)
+		}
 	}
 
 	const item = itemsData?.items.find((i) => i.id === itemId)
@@ -54,10 +63,15 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 					className='border-b border-gray-200'
 				>
 					<div>
-						<Title order={2}>{item.name}</Title>
-						<Text c='dimmed' size='sm'>
-							Item Details
-						</Text>
+						<Title order={3} fw={600}>
+							{item.name.toUpperCase()}
+						</Title>
+						<Group gap='4' align='center'>
+							<Info size={20} className='text-gray-400' />
+							<Text c='dimmed' size='lg'>
+								{item.id}
+							</Text>
+						</Group>
 					</div>
 					<Group>
 						<Button
@@ -67,59 +81,38 @@ export function ItemDetail({ itemId }: ItemDetailProps) {
 							Edit
 						</Button>
 						<Button
-							bg='gray.1'
-							c='dimmed'
-							leftSection={<Archive size={16} />}
-							onClick={() => {
-								if (window.confirm('Move this item to archive?')) {
-									handleToggleActive(item.id, item.isActive)
-								}
-							}}
-							disabled={toggleActiveMutation.isPending}
+							color='red'
+							variant='light'
+							leftSection={<Trash2 size={16} />}
+							onClick={handleDelete}
 						>
-							Archive
+							Delete
 						</Button>
 					</Group>
 				</Group>
 
 				<ScrollArea flex={1}>
 					<Stack p={{ base: 'md', lg: 'xl' }}>
-						<div>
-							<Text size='sm' c='dimmed'>
-								Name
-							</Text>
-							<Text size='lg'>{item.name}</Text>
-						</div>
+						<Grid gutter='md'>
+							<Grid.Col span={{ base: 12, lg: 2 }}>
+								<Text c='gray.5'>Description:</Text>
+							</Grid.Col>
+							<Grid.Col span={{ base: 12, lg: 10 }}>
+								<Text style={{ whiteSpace: 'pre-wrap' }}>{item.description}</Text>
+							</Grid.Col>
+							<Grid.Col span={{ base: 12, lg: 2 }}>
+								<Text c='gray.5'>Selling Price:</Text>
+							</Grid.Col>
+							<Grid.Col span={{ base: 12, lg: 10 }}>
+								<Text>{formatCurrency(item.unitPrice)}</Text>
+							</Grid.Col>
+						</Grid>
 
-						<div>
-							<Text size='sm' c='dimmed'>
-								Description
-							</Text>
-							<Text size='lg'>{item.description}</Text>
-						</div>
+						<Divider my='sm' />
 
-						<div>
-							<Text size='sm' c='dimmed'>
-								Unit Price
-							</Text>
-							<Text size='lg'>{formatCurrency(item.unitPrice)}</Text>
-						</div>
-
-						<div>
-							<Text size='sm' c='dimmed'>
-								ID
-							</Text>
-							<Text size='lg' className='geist'>
-								{item.id}
-							</Text>
-						</div>
-
-						<div>
-							<Text size='sm' c='dimmed'>
-								Created
-							</Text>
-							<Text className='geist'>{formatUnixTimestamp(item.createdAt)}</Text>
-						</div>
+						<Badge bg='blue.0' variant='subtle' fw={500}>
+							{formatUnixTimestamp(item.createdAt)}
+						</Badge>
 					</Stack>
 				</ScrollArea>
 			</Stack>

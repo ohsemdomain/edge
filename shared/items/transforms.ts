@@ -8,7 +8,6 @@ export const toApiItem = (dbItem: DbItem): Item => ({
 	name: dbItem.name,
 	description: dbItem.description,
 	unitPrice: dbItem.unitPrice,
-	isActive: dbItem.isActive,
 	createdAt: dbItem.createdAt  // Already a Unix timestamp
 })
 

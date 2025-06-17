@@ -11,7 +11,6 @@ export function toApiInvoice(dbInvoice: DbInvoice): Invoice {
     invoiceDate: dbInvoice.invoiceDate,
     dueDate: dbInvoice.dueDate,
     notes: dbInvoice.notes,
-    isActive: dbInvoice.isActive,
     createdAt: dbInvoice.createdAt
   }
 }
@@ -55,7 +54,6 @@ export function toApiInvoiceWithRelations(
       companyName: string
       email: string | null
       primaryPhone: string
-      isActive: boolean
     } | null
   }
 ): InvoiceWithRelations {

@@ -22,8 +22,7 @@ export function PaymentsList({ selectedId, onSelect }: PaymentsListProps) {
 	const { data } = trpc.payments.list.useQuery({
 		search: '', // Always empty for server
 		page: 1,
-		limit: 1000, // Get all payments
-		isActive: true
+		limit: 1000 // Get all payments
 	})
 
 	// Client-side filter

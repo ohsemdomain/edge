@@ -24,8 +24,7 @@ export function InvoiceItems({ items, onChange }: InvoiceItemsProps) {
 	const { data: itemsData } = trpc.items.list.useQuery({
 		search: '',
 		page: 1,
-		limit: 1000,
-		isActive: true
+		limit: 1000
 	})
 
 	// Sync local state with props

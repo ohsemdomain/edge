@@ -11,7 +11,6 @@ export interface Contact {
 	phoneAlt2: string | null
 	phoneAlt3: string | null
 	isSupplier: boolean
-	isActive: boolean
 	createdAt: number  // Unix timestamp in seconds
 }
 
@@ -94,5 +93,4 @@ export interface ContactListParams {
 	search?: string
 	page?: number
 	limit?: number
-	isActive?: boolean
 }

@@ -12,10 +12,8 @@ export const contacts = sqliteTable('contacts', {
 	phoneAlt2: text('phone_alt_2'),
 	phoneAlt3: text('phone_alt_3'),
 	isSupplier: integer('is_supplier', { mode: 'boolean' }).default(false), // FALSE = Client, TRUE = Supplier
-	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 	createdAt: integer('created_at').notNull()
 }, (table) => ({
-	activeIdx: index('idx_contacts_active').on(table.isActive),
 	createdAtIdx: index('idx_contacts_created_at').on(table.createdAt),
 	supplierIdx: index('idx_contacts_supplier').on(table.isSupplier),
 	companyNameIdx: uniqueIndex('idx_contacts_company_name').on(table.companyName)

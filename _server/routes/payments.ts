@@ -1,6 +1,5 @@
 // _server/routes/payments.ts
 import { eq, and, desc, gte, lte, sql } from 'drizzle-orm'
-import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
 import { getDb, schema } from '../db'
 
@@ -16,20 +15,18 @@ import {
 	paymentBalanceSchema
 } from '~/payments/validation'
 
-const archivePaymentsRouter = createArchiveRouter('payments')
 
 export const paymentsRouter = router({
-	...archivePaymentsRouter,
 
 	list: publicProcedure
 		.input(paymentListSchema)
 		.query(async ({ input, ctx }): Promise<PaymentListResponse> => {
 			const db = getDb(ctx.env.DB)
-			const { search, contactId, startDate, endDate, type, page, limit, isActive } = input
+			const { search, contactId, startDate, endDate, type, page, limit } = input
 			const offset = (page - 1) * limit
 
 			// Build conditions
-			const conditions = [eq(schema.payments.isActive, isActive)]
+			const conditions: any[] = []
 			
 			if (contactId) {
 				conditions.push(eq(schema.payments.contactId, contactId))
@@ -53,7 +50,9 @@ export const paymentsRouter = router({
 					payment: schema.payments,
 					contact: {
 						id: schema.contacts.id,
-						companyName: schema.contacts.companyName
+						companyName: schema.contacts.companyName,
+						email: schema.contacts.email,
+						primaryPhone: schema.contacts.primaryPhone
 					},
 					invoice: {
 						id: schema.invoices.id,
@@ -143,10 +142,7 @@ export const paymentsRouter = router({
 					invoice: schema.invoices
 				})
 				.from(schema.invoices)
-				.where(and(
-					eq(schema.invoices.contactId, contactId),
-					eq(schema.invoices.isActive, true)
-				))
+				.where(eq(schema.invoices.contactId, contactId))
 
 			// Get invoice items to calculate total invoiced
 			let totalInvoiced = 0
@@ -169,7 +165,6 @@ export const paymentsRouter = router({
 				.from(schema.payments)
 				.where(and(
 					eq(schema.payments.contactId, contactId),
-					eq(schema.payments.isActive, true),
 					eq(schema.payments.type, 'payment')
 				))
 
@@ -196,10 +191,9 @@ export const paymentsRouter = router({
 				amount: input.amount,
 				paymentDate: input.paymentDate,
 				paymentMethod: input.paymentMethod || null,
-				type: input.type || 'payment',
+				type: (input.type || 'payment') as 'payment' | 'refund',
 				notes: input.notes || null,
-				isActive: true,
-				createdAt
+					createdAt
 			})
 
 			// Return the created payment in API format
@@ -210,10 +204,9 @@ export const paymentsRouter = router({
 				amount: input.amount,
 				paymentDate: input.paymentDate,
 				paymentMethod: input.paymentMethod || null,
-				type: input.type || 'payment',
+				type: (input.type || 'payment') as 'payment' | 'refund',
 				notes: input.notes || null,
-				isActive: true,
-				createdAt
+					createdAt
 			}
 
 			return toApiPaymentWithRelations(dbPayment, {
@@ -237,7 +230,7 @@ export const paymentsRouter = router({
 					amount: input.amount,
 					paymentDate: input.paymentDate,
 					paymentMethod: input.paymentMethod || null,
-					type: input.type || 'payment',
+					type: (input.type || 'payment') as 'payment' | 'refund',
 					notes: input.notes || null
 				})
 				.where(eq(schema.payments.id, input.id))

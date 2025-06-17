@@ -12,7 +12,6 @@ export type DbInvoice = {
   invoiceDate: number
   dueDate: number | null
   notes: string | null
-  isActive: boolean
   createdAt: number
 }
 

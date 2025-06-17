@@ -13,7 +13,6 @@ export function toApiPayment(dbPayment: DbPayment): Payment {
     paymentMethod: dbPayment.paymentMethod,
     type: dbPayment.type,
     notes: dbPayment.notes,
-    isActive: dbPayment.isActive,
     createdAt: dbPayment.createdAt
   }
 }

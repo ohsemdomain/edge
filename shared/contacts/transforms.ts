@@ -13,7 +13,6 @@ export const toApiContact = (dbContact: DbContact): Contact => ({
 	phoneAlt2: dbContact.phoneAlt2,
 	phoneAlt3: dbContact.phoneAlt3,
 	isSupplier: Boolean(dbContact.isSupplier),
-	isActive: Boolean(dbContact.isActive),
 	createdAt: dbContact.createdAt  // Already a Unix timestamp
 })
 

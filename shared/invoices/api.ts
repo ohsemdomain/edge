@@ -19,7 +19,6 @@ export interface Invoice {
   invoiceDate: number  // Unix timestamp in seconds
   dueDate: number | null  // Unix timestamp in seconds
   notes: string | null
-  isActive: boolean
   createdAt: number  // Unix timestamp in seconds
 }
 
@@ -31,7 +30,6 @@ export interface InvoiceWithRelations {
   invoiceDate: number
   dueDate: number | null
   notes: string | null
-  isActive: boolean
   createdAt: number
   // Related data
   contactName: string
@@ -46,7 +44,6 @@ export interface InvoiceWithRelations {
     companyName: string
     email: string | null
     primaryPhone: string
-    isActive: boolean
   } | null
 }
 

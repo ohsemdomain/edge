@@ -28,16 +28,14 @@ export function PaymentFormPage({ mode }: PaymentFormPageProps) {
 	const { data: contactsData } = trpc.contacts.list.useQuery({
 		search: '',
 		page: 1,
-		limit: 1000,
-		isActive: true
+		limit: 1000
 	})
 
 	// Load invoices for dropdown (optional)
 	const { data: invoicesData } = trpc.invoices.list.useQuery({
 		search: '',
 		page: 1,
-		limit: 1000,
-		isActive: true
+		limit: 1000
 	})
 
 	// Load payment data for edit mode

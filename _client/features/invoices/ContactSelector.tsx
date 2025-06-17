@@ -43,9 +43,7 @@ export function ContactSelector({
 
 	// Load all contacts once
 	const { data: contactsData, isLoading } = trpc.contacts.list.useQuery(
-		{
-			isActive: true
-		},
+		{},
 		{
 			staleTime: 5 * 60 * 1000,
 			refetchOnWindowFocus: false

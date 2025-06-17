@@ -1,6 +1,6 @@
 // _client/features/invoices/InvoiceDetail.tsx
-import { ActionIcon, Badge, Button, Card, Group, Paper, ScrollArea, Stack, Table, Text, Title, Divider } from '@mantine/core'
-import { Archive, Edit, Plus } from 'lucide-react'
+import { ActionIcon, Button, Card, Group, Paper, ScrollArea, Stack, Table, Text, Title, Divider } from '@mantine/core'
+import { Edit, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -17,36 +17,28 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 	const utils = trpc.useUtils()
 	const [paymentModalOpen, setPaymentModalOpen] = useState(false)
 
-	const { data: invoice, refetch, error, isLoading } = trpc.invoices.getById.useQuery(invoiceId)
+	const { data: invoice, refetch } = trpc.invoices.getById.useQuery(invoiceId)
 
-	const toggleActiveMutation = trpc.invoices.toggleActive.useMutation({
+	const deleteMutation = trpc.invoices.delete.useMutation({
 		onSuccess: () => {
-			navigate('/invoices')
+			toast.success('Invoice deleted successfully')
 			utils.invoices.list.invalidate()
+			navigate('/invoices')
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to delete invoice')
 		}
 	})
 
-	const handleToggleActive = (id: string, currentlyActive: boolean) => {
-		const action = currentlyActive ? 'Archiving' : 'Restoring'
-		const actionPast = currentlyActive ? 'archived' : 'restored'
-
-		toast.promise(toggleActiveMutation.mutateAsync({ id }), {
-			loading: `${action}...`,
-			success: `Successfully ${actionPast}`,
-			error: `Could not ${action.toLowerCase()}`
-		})
-	}
-
-
-
-	const getStatusBadge = (status: string) => {
-		const colors = {
-			paid: 'green',
-			partial: 'yellow',
-			unpaid: 'red'
+	const handleDelete = () => {
+		if (window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+			deleteMutation.mutate(invoiceId)
 		}
-		return colors[status as keyof typeof colors] || 'gray'
 	}
+
+
+
+
 
 	if (!invoice) return null
 
@@ -84,17 +76,12 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 								Edit
 							</Button>
 							<Button
-								bg='gray.1'
-								c='dimmed'
-								leftSection={<Archive size={16} />}
-								onClick={() => {
-									if (window.confirm('Move this invoice to archive?')) {
-										handleToggleActive(invoice.id, invoice.isActive)
-									}
-								}}
-								disabled={toggleActiveMutation.isPending}
+								color="red"
+								variant="light"
+								leftSection={<Trash2 size={16} />}
+								onClick={handleDelete}
 							>
-								Archive
+								Delete
 							</Button>
 						</Group>
 					</Group>
@@ -105,13 +92,6 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 							<Card withBorder>
 								<Group justify='space-between' mb='md'>
 									<Text fw={600}>Invoice Summary</Text>
-									<Badge
-										color={getStatusBadge(invoice.isActive ? 'active' : 'inactive')}
-										size='lg'
-										variant='light'
-									>
-										{invoice.isActive ? 'ACTIVE' : 'INACTIVE'}
-									</Badge>
 								</Group>
 								<Group justify='space-between'>
 									<div>

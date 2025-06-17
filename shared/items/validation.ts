@@ -21,8 +21,7 @@ export const itemUpdateSchema = z.object({
 export const itemListSchema = z.object({
 	search: z.string().optional(),
 	page: z.number().default(DEFAULT_ITEMS_PAGE),
-	limit: z.number().default(DEFAULT_ITEMS_LIMIT),
-	isActive: z.boolean().default(true)
+	limit: z.number().default(DEFAULT_ITEMS_LIMIT)
 })
 
 // Item ID validation

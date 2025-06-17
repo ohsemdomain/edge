@@ -15,8 +15,7 @@ export function InvoicesPage() {
 	const { data } = trpc.invoices.list.useQuery({
 		search: '',
 		page: 1,
-		limit: 1000,
-		isActive: true
+		limit: 1000
 	})
 
 	// Auto-select first invoice if none selected on desktop

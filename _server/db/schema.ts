@@ -1,8 +1,8 @@
-import { integer, real, sqliteTable, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text, index } from 'drizzle-orm/sqlite-core'
 
 // Import schemas from shared
 import { items as itemsTable } from '~/items/database'
-import { contacts as contactsTable, contactAddresses as contactAddressesTable } from '~/contacts/database'
+import { contacts as contactsTable } from '~/contacts/database'
 
 export { items } from '~/items/database'
 export { contacts, contactAddresses } from '~/contacts/database'
@@ -15,12 +15,10 @@ export const invoices = sqliteTable('invoices', {
 	invoiceDate: integer('invoice_date').notNull(),
 	dueDate: integer('due_date'),
 	notes: text('notes'),
-	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 	createdAt: integer('created_at').notNull()
 }, (table) => ({
 	contactIdIdx: index('idx_invoices_contact_id').on(table.contactId),
-	invoiceNumberIdx: index('idx_invoices_invoice_number').on(table.invoiceNumber),
-	isActiveIdx: index('idx_invoices_is_active').on(table.isActive)
+	invoiceNumberIdx: index('idx_invoices_invoice_number').on(table.invoiceNumber)
 }))
 
 // Invoice Items table
@@ -47,14 +45,12 @@ export const payments = sqliteTable('payments', {
 	paymentMethod: text('payment_method'),
 	type: text('type').notNull().default('payment'),
 	notes: text('notes'),
-	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 	createdAt: integer('created_at').notNull()
 }, (table) => ({
 	contactIdIdx: index('idx_payments_contact_id').on(table.contactId),
 	invoiceIdIdx: index('idx_payments_invoice_id').on(table.invoiceId),
 	paymentDateIdx: index('idx_payments_payment_date').on(table.paymentDate),
-	typeIdx: index('idx_payments_type').on(table.type),
-	isActiveIdx: index('idx_payments_is_active').on(table.isActive)
+	typeIdx: index('idx_payments_type').on(table.type)
 }))
 
 // Type exports (items and contacts types are exported from shared)

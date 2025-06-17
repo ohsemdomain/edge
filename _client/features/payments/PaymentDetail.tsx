@@ -1,6 +1,6 @@
 // _client/features/payments/PaymentDetail.tsx
 import { Badge, Button, Card, Group, Paper, ScrollArea, Stack, Text, Title } from '@mantine/core'
-import { Archive, Edit } from 'lucide-react'
+import { Edit, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { formatCurrency, formatUnixTimestamp } from '~c/lib/formatter'
@@ -13,25 +13,23 @@ interface PaymentDetailProps {
 export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 	const navigate = useNavigate()
 	const utils = trpc.useUtils()
+	const { data: payment } = trpc.payments.getById.useQuery(paymentId)
 
-	const { data: payment, error, isLoading } = trpc.payments.getById.useQuery(paymentId)
-
-	const toggleActiveMutation = trpc.payments.toggleActive.useMutation({
+	const deleteMutation = trpc.payments.delete.useMutation({
 		onSuccess: () => {
-			navigate('/payments')
+			toast.success('Payment deleted successfully')
 			utils.payments.list.invalidate()
+			navigate('/payments')
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to delete payment')
 		}
 	})
 
-	const handleToggleActive = (id: string, currentlyActive: boolean) => {
-		const action = currentlyActive ? 'Archiving' : 'Restoring'
-		const actionPast = currentlyActive ? 'archived' : 'restored'
-
-		toast.promise(toggleActiveMutation.mutateAsync({ id }), {
-			loading: `${action}...`,
-			success: `Successfully ${actionPast}`,
-			error: `Could not ${action.toLowerCase()}`
-		})
+	const handleDelete = () => {
+		if (window.confirm('Are you sure you want to delete this payment? This action cannot be undone.')) {
+			deleteMutation.mutate(paymentId)
+		}
 	}
 
 	const getStatusBadge = (type: string) => {
@@ -71,17 +69,12 @@ export function PaymentDetail({ paymentId }: PaymentDetailProps) {
 							Edit
 						</Button>
 						<Button
-							bg='gray.1'
-							c='dimmed'
-							leftSection={<Archive size={16} />}
-							onClick={() => {
-								if (window.confirm('Move this payment to archive?')) {
-									handleToggleActive(payment.id, payment.isActive)
-								}
-							}}
-							disabled={toggleActiveMutation.isPending}
+							color="red"
+							variant="light"
+							leftSection={<Trash2 size={16} />}
+							onClick={handleDelete}
 						>
-							Archive
+							Delete
 						</Button>
 					</Group>
 				</Group>

@@ -22,8 +22,7 @@ export function InvoicesList({ selectedId, onSelect }: InvoicesListProps) {
 	const { data } = trpc.invoices.list.useQuery({
 		search: '', // Always empty for server
 		page: 1,
-		limit: 1000, // Get all invoices
-		isActive: true
+		limit: 1000 // Get all invoices
 	})
 
 	// Client-side filter

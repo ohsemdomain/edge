@@ -7,10 +7,8 @@ export const items = sqliteTable('items', {
 	name: text('name').notNull(),
 	description: text('description').notNull(),
 	unitPrice: real('unit_price').notNull(),
-	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 	createdAt: integer('created_at').notNull()
 }, (table) => ({
-	activeIdx: index('idx_items_active').on(table.isActive),
 	createdAtIdx: index('idx_items_created_at').on(table.createdAt)
 }))
 

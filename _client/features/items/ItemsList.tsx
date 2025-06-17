@@ -1,11 +1,11 @@
 // _client/features/items/ItemsList.tsx
-import { ActionIcon, Badge, Card, Group, Stack, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Badge, Card, Grid, Group, Stack, Text, TextInput } from '@mantine/core'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Plus, Search } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { trpc } from '~c/trpc'
 import { formatCurrency } from '~c/lib/formatter'
+import { trpc } from '~c/trpc'
 
 interface ItemsListProps {
 	selectedId: string
@@ -22,8 +22,7 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 	const { data } = trpc.items.list.useQuery({
 		search: '', // Always empty for server
 		page: 1,
-		limit: 1000, // Get all items
-		isActive: true
+		limit: 1000 // Get all items
 	})
 
 	// Client-side filter
@@ -123,12 +122,12 @@ export function ItemsList({ selectedId, onSelect }: ItemsListProps) {
 									}}
 								>
 									<Group justify='space-between' align='start'>
-										<Text fw={500}>{item.name}</Text>
+										<Text truncate fw={500}>{item.name.toUpperCase()}</Text>
 										<Text size='sm' fw={500}>
 											{formatCurrency(item.unitPrice)}
 										</Text>
 									</Group>
-									<Text className='geist' size='sm' c='dimmed'>
+									<Text size='sm' c='dimmed'>
 										{item.id}
 									</Text>
 								</Card>

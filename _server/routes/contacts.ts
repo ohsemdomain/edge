@@ -1,6 +1,5 @@
 // _server/routes/contacts.ts
 import { eq, like, or, and, desc } from 'drizzle-orm'
-import { createArchiveRouter } from '../lib/archiveProcedures'
 import { publicProcedure, router } from '../trpc'
 import { getDb, schema } from '../db'
 
@@ -18,19 +17,17 @@ import {
 	addressIdSchema
 } from '~/contacts/validation'
 
-const archiveContactsRouter = createArchiveRouter('contacts')
 
 export const contactsRouter = router({
-	...archiveContactsRouter,
 
 	list: publicProcedure
 		.input(contactListSchema)
 		.query(async ({ input, ctx }): Promise<ContactListResponse> => {
 			const db = getDb(ctx.env.DB)
-			const { search, page, limit, isActive } = input
+			const { search, page, limit } = input
 			const offset = (page - 1) * limit
 
-			const conditions = [eq(schema.contacts.isActive, isActive)]
+			const conditions: any[] = []
 			
 			if (search) {
 				conditions.push(
@@ -44,7 +41,7 @@ export const contactsRouter = router({
 			const results = await db
 				.select()
 				.from(schema.contacts)
-				.where(and(...conditions))
+				.where(conditions.length > 0 ? and(...conditions) : undefined)
 				.orderBy(desc(schema.contacts.createdAt))
 				.limit(limit)
 				.offset(offset)
@@ -72,7 +69,6 @@ export const contactsRouter = router({
 				phoneAlt2: input.phoneAlt2 || null,
 				phoneAlt3: input.phoneAlt3 || null,
 				isSupplier: input.isSupplier || false,
-				isActive: true,
 				createdAt
 			})
 
@@ -87,7 +83,6 @@ export const contactsRouter = router({
 				phoneAlt2: input.phoneAlt2 || null,
 				phoneAlt3: input.phoneAlt3 || null,
 				isSupplier: input.isSupplier || false,
-				isActive: true,
 				createdAt
 			}
 

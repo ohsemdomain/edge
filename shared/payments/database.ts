@@ -1,5 +1,4 @@
 // shared/payments/database.ts
-import { integer, real, sqliteTable, text, index } from 'drizzle-orm/sqlite-core'
 
 // Re-export the payments table from main schema
 // (Note: The main schema is already using the correct camelCase field names)
@@ -15,6 +14,5 @@ export type DbPayment = {
   paymentMethod: string | null
   type: 'payment' | 'refund'
   notes: string | null
-  isActive: boolean
   createdAt: number
 }
