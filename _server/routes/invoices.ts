@@ -372,10 +372,15 @@ getById: publicProcedure
 			
 			if (itemCount > 0 || paymentCount > 0) {
 				const dependencies = []
-				if (itemCount > 0) dependencies.push(`${itemCount} invoice item(s)`)
-				if (paymentCount > 0) dependencies.push(`${paymentCount} payment(s)`)
+				if (itemCount > 0) dependencies.push(itemCount === 1 ? 'invoice item' : 'invoice items')
+				if (paymentCount > 0) dependencies.push(paymentCount === 1 ? 'payment' : 'payments')
 				
-				throw new Error(`Invoice can't be deleted as it has related data: ${dependencies.join(', ')}. Remove them first.`)
+				// Format with "and" for last item if multiple
+				const formattedDeps = dependencies.length > 1 
+					? dependencies.slice(0, -1).join(', ') + ' and ' + dependencies[dependencies.length - 1]
+					: dependencies[0]
+				
+				throw new Error(`Delete Failed: Used in ${formattedDeps}`)
 			}
 			
 			// Safe to delete

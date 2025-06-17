@@ -339,11 +339,16 @@ export const contactsRouter = router({
 			
 			if (addressCount > 0 || invoiceCount > 0 || paymentCount > 0) {
 				const dependencies = []
-				if (addressCount > 0) dependencies.push(`${addressCount} address(es)`)
-				if (invoiceCount > 0) dependencies.push(`${invoiceCount} invoice(s)`)
-				if (paymentCount > 0) dependencies.push(`${paymentCount} payment(s)`)
+				if (addressCount > 0) dependencies.push(addressCount === 1 ? 'address' : 'addresses')
+				if (invoiceCount > 0) dependencies.push(invoiceCount === 1 ? 'invoice' : 'invoices')
+				if (paymentCount > 0) dependencies.push(paymentCount === 1 ? 'payment' : 'payments')
 				
-				throw new Error(`Contact can't be deleted as it has related data: ${dependencies.join(', ')}. Remove them first.`)
+				// Format with "and" for last item if multiple
+				const formattedDeps = dependencies.length > 1 
+					? dependencies.slice(0, -1).join(', ') + ' and ' + dependencies[dependencies.length - 1]
+					: dependencies[0]
+				
+				throw new Error(`Delete Failed: Used in ${formattedDeps}`)
 			}
 			
 			// Safe to delete

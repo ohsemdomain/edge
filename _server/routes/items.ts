@@ -110,7 +110,8 @@ export const itemsRouter = router({
 			const invoiceItemCount = (results[0] as any)?.count || 0
 			
 			if (invoiceItemCount > 0) {
-				throw new Error(`Item can't be deleted as it is used in ${invoiceItemCount} invoice item(s). Remove them first.`)
+				const itemText = invoiceItemCount === 1 ? 'invoice' : 'invoices'
+				throw new Error(`Delete Failed: Used in ${itemText}`)
 			}
 			
 			// Safe to delete

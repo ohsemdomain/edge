@@ -1,7 +1,7 @@
 // _client/features/archive/GenericArchive.tsx
-import { Card, Group, ScrollArea, Stack, TextInput } from '@mantine/core'
+import { Button, Card, Group, ScrollArea, Stack, TextInput } from '@mantine/core'
 import { Search } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { ArchiveActions } from '~c/components/ArchiveActions'
 import { useArchiveStore } from '~c/stores/useArchiveStore'
@@ -26,22 +26,22 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 					isActive: false
 				})
 			: feature === 'items'
-			? trpc.items.list.useQuery({
-					page: 1,
-					limit: 1000,
-					isActive: false
-				})
-			: feature === 'invoices'
-			? trpc.invoices.list.useQuery({
-					page: 1,
-					limit: 1000,
-					isActive: false
-				})
-			: trpc.payments.list.useQuery({
-					page: 1,
-					limit: 1000,
-					isActive: false
-				})
+				? trpc.items.list.useQuery({
+						page: 1,
+						limit: 1000,
+						isActive: false
+					})
+				: feature === 'invoices'
+					? trpc.invoices.list.useQuery({
+							page: 1,
+							limit: 1000,
+							isActive: false
+						})
+					: trpc.payments.list.useQuery({
+							page: 1,
+							limit: 1000,
+							isActive: false
+						})
 
 	const toggleActiveMutation = trpc[feature].toggleActive.useMutation({
 		onSuccess: () => {
@@ -59,13 +59,13 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 
 	// Get items array from different formats
 	const items =
-		feature === 'contacts' 
-			? (query.data as any)?.contacts || [] 
+		feature === 'contacts'
+			? (query.data as any)?.contacts || []
 			: feature === 'items'
-			? (query.data as any)?.items || []
-			: feature === 'invoices'
-			? (query.data as any)?.invoices || []
-			: (query.data as any)?.payments || []
+				? (query.data as any)?.items || []
+				: feature === 'invoices'
+					? (query.data as any)?.invoices || []
+					: (query.data as any)?.payments || []
 
 	// Update count when items change
 	useEffect(() => {
@@ -85,16 +85,28 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 
 	const handleDelete = (id: string, name: string) => {
 		if (window.confirm(`Permanently delete "${name}"?`)) {
-			// Different features expect different input formats
 			const deleteInput = feature === 'payments' ? { id } : id
-			toast.promise(deleteMutation.mutateAsync(deleteInput as any), {
-				loading: 'Deleting...',
-				success: 'Permanently deleted',
-				error: (error: any) => {
-					// Display the specific error message from the server
-					return error?.message || 'Could not delete'
+
+			toast.promise(
+				deleteMutation.mutateAsync(deleteInput as any),
+				{
+					loading: 'Deleting...',
+					success: 'Permanently deleted',
+					error: (error: any) => {
+						return (t) => <span className='text-sm'>{error?.message || 'Could not delete'}</span>
+					}
+				},
+				{
+					error: {
+						duration: 7000,
+						style: {
+							padding: '10px 16px',
+							alignItems: 'center',
+							maxWidth: '500px'
+						}
+					}
 				}
-			})
+			)
 		}
 	}
 
@@ -124,7 +136,12 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 								<div>{renderItem(item)}</div>
 								<ArchiveActions
 									onToggleActive={() => handleToggleActive(item.id, false)}
-									onDelete={() => handleDelete(item.id, item.name || item.company_name || item.invoice_number || item.contactName)}
+									onDelete={() =>
+										handleDelete(
+											item.id,
+											item.name || item.company_name || item.invoice_number || item.contactName
+										)
+									}
 									isActive={false}
 									isToggling={toggleActiveMutation.isPending}
 									isDeleting={deleteMutation.isPending}
