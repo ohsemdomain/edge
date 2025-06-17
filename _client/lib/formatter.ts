@@ -65,6 +65,15 @@ export const formatDateForDisplay = (date: Date): string => {
 }
 
 /**
+ * Format Unix timestamp (seconds) to date format for display
+ * @param timestamp Unix timestamp in seconds
+ * @returns Formatted date string like "12.06.2025"
+ */
+export const formatUnixTimestamp = (timestamp: number): string => {
+	return formatDateForDisplay(new Date(timestamp * 1000))
+}
+
+/**
  * Format number as Malaysian Ringgit currency
  * @param amount Number to format as currency
  * @returns Formatted currency string like "RM1,234.56"

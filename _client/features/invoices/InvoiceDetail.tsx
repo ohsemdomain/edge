@@ -4,7 +4,7 @@ import { Archive, Edit, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { formatDate, formatDateForDisplay, formatCurrency } from '~c/lib/formatter'
+import { formatCurrency, formatUnixTimestamp } from '~c/lib/formatter'
 import { trpc } from '~c/trpc'
 import { PaymentModal } from './PaymentModal'
 
@@ -153,12 +153,12 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 								</div>
 								<div>
 									<Text size='sm' c='dimmed'>Invoice Date</Text>
-									<Text fw={500}>{formatDateForDisplay(new Date(invoice.invoiceDate))}</Text>
+									<Text fw={500}>{formatUnixTimestamp(invoice.invoiceDate)}</Text>
 								</div>
 								{invoice.dueDate && (
 									<div>
 										<Text size='sm' c='dimmed'>Due Date</Text>
-										<Text fw={500}>{formatDateForDisplay(new Date(invoice.dueDate))}</Text>
+										<Text fw={500}>{formatUnixTimestamp(invoice.dueDate)}</Text>
 									</div>
 								)}
 							</Group>
@@ -255,7 +255,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 													<Table.Tr key={payment.id}>
 														<Table.Td>
 															<Text size='sm'>
-																{formatDateForDisplay(new Date(payment.paymentDate))}
+																{formatUnixTimestamp(payment.paymentDate)}
 															</Text>
 														</Table.Td>
 														<Table.Td>
@@ -294,7 +294,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 
 							<div>
 								<Text size='sm' c='dimmed' mb='xs'>Created</Text>
-								<Text className='geist' size='sm'>{formatDateForDisplay(new Date(invoice.created_at))}</Text>
+								<Text className='geist' size='sm'>{formatUnixTimestamp(invoice.created_at)}</Text>
 							</div>
 						</Stack>
 					</ScrollArea>

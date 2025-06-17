@@ -199,16 +199,16 @@ getById: publicProcedure
             items,
             payments: payments.map((payment: any) => ({
                 ...payment,
-                paymentDate: (payment.payment_date as number) * 1000,
+                paymentDate: payment.payment_date as number,
                 paymentMethod: payment.payment_method
             })),
             total,
             paidAmount,
             contactBalance,
             status,
-            invoiceDate: (invoice.invoice_date as number) * 1000, // Convert to milliseconds
-            dueDate: invoice.due_date ? (invoice.due_date as number) * 1000 : null,
-            created_at: (invoice.created_at as number) * 1000
+            invoiceDate: invoice.invoice_date as number,
+            dueDate: invoice.due_date as number,
+            created_at: invoice.created_at as number
         }
     }),
 
