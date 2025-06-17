@@ -1,5 +1,5 @@
 //_client/features/items/ItemFormPage.tsx
-import { Box, Button, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core'
+import { Box, Button, Group, NumberInput, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -79,11 +79,12 @@ export function ItemFormPage({ mode }: ItemFormPageProps) {
 							onChange={(e) => setFormData({ ...formData, name: e.target.value })}
 							required
 						/>
-						<TextInput
+						<Textarea
 							label='Description'
 							placeholder='Enter item description'
 							value={formData.description}
 							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+							rows={5}
 							required
 						/>
 						<NumberInput
