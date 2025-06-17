@@ -351,5 +351,38 @@ getById: publicProcedure
 			}
 
 			return { success: true }
+		}),
+
+	delete: publicProcedure
+		.input(z.string())
+		.mutation(async ({ input: id, ctx }) => {
+			const { DB } = ctx.env
+			
+			// Check for related data
+			const { results: items } = await DB.prepare('SELECT COUNT(*) as count FROM invoice_items WHERE invoice_id = ?')
+				.bind(id)
+				.all()
+			
+			const { results: payments } = await DB.prepare('SELECT COUNT(*) as count FROM payments WHERE invoice_id = ?')
+				.bind(id)
+				.all()
+			
+			const itemCount = (items[0] as any)?.count || 0
+			const paymentCount = (payments[0] as any)?.count || 0
+			
+			if (itemCount > 0 || paymentCount > 0) {
+				const dependencies = []
+				if (itemCount > 0) dependencies.push(`${itemCount} invoice item(s)`)
+				if (paymentCount > 0) dependencies.push(`${paymentCount} payment(s)`)
+				
+				throw new Error(`Invoice can't be deleted as it has related data: ${dependencies.join(', ')}. Remove them first.`)
+			}
+			
+			// Safe to delete
+			await DB.prepare('DELETE FROM invoices WHERE id = ?')
+				.bind(id)
+				.run()
+			
+			return { success: true }
 		})
 })

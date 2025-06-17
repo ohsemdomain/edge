@@ -95,6 +95,29 @@ export const itemsRouter = router({
 			await DB.prepare('UPDATE items SET name = ?, description = ?, unit_price = ? WHERE id = ?').bind(input.name, input.description, input.unit_price, input.id).run()
 
 			return { success: true }
+		}),
+
+	delete: publicProcedure
+		.input(z.string())
+		.mutation(async ({ input: id, ctx }) => {
+			const { DB } = ctx.env
+			
+			// Check for related data in invoice_items
+			const { results } = await DB.prepare('SELECT COUNT(*) as count FROM invoice_items WHERE item_id = ?')
+				.bind(id)
+				.all()
+			
+			const invoiceItemCount = (results[0] as any)?.count || 0
+			
+			if (invoiceItemCount > 0) {
+				throw new Error(`Item can't be deleted as it is used in ${invoiceItemCount} invoice item(s). Remove them first.`)
+			}
+			
+			// Safe to delete
+			await DB.prepare('DELETE FROM items WHERE id = ?')
+				.bind(id)
+				.run()
+			
+			return { success: true }
 		})
-		
 })

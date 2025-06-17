@@ -90,7 +90,10 @@ export function GenericArchive({ feature, renderItem }: GenericArchiveProps) {
 			toast.promise(deleteMutation.mutateAsync(deleteInput as any), {
 				loading: 'Deleting...',
 				success: 'Permanently deleted',
-				error: 'Could not delete'
+				error: (error: any) => {
+					// Display the specific error message from the server
+					return error?.message || 'Could not delete'
+				}
 			})
 		}
 	}

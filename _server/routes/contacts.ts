@@ -313,5 +313,44 @@ export const contactsRouter = router({
 		const { DB } = ctx.env
 		await DB.prepare('DELETE FROM contact_addresses WHERE id = ?').bind(id).run()
 		return { success: true }
-	})
+	}),
+
+	delete: publicProcedure
+		.input(z.string())
+		.mutation(async ({ input: id, ctx }) => {
+			const { DB } = ctx.env
+			
+			// Check for related data
+			const { results: addresses } = await DB.prepare('SELECT COUNT(*) as count FROM contact_addresses WHERE contact_id = ?')
+				.bind(id)
+				.all()
+			
+			const { results: invoices } = await DB.prepare('SELECT COUNT(*) as count FROM invoices WHERE contact_id = ?')
+				.bind(id)
+				.all()
+			
+			const { results: payments } = await DB.prepare('SELECT COUNT(*) as count FROM payments WHERE contact_id = ?')
+				.bind(id)
+				.all()
+			
+			const addressCount = (addresses[0] as any)?.count || 0
+			const invoiceCount = (invoices[0] as any)?.count || 0
+			const paymentCount = (payments[0] as any)?.count || 0
+			
+			if (addressCount > 0 || invoiceCount > 0 || paymentCount > 0) {
+				const dependencies = []
+				if (addressCount > 0) dependencies.push(`${addressCount} address(es)`)
+				if (invoiceCount > 0) dependencies.push(`${invoiceCount} invoice(s)`)
+				if (paymentCount > 0) dependencies.push(`${paymentCount} payment(s)`)
+				
+				throw new Error(`Contact can't be deleted as it has related data: ${dependencies.join(', ')}. Remove them first.`)
+			}
+			
+			// Safe to delete
+			await DB.prepare('DELETE FROM contacts WHERE id = ?')
+				.bind(id)
+				.run()
+			
+			return { success: true }
+		})
 })
